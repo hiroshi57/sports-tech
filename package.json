@@ -1,0 +1,35 @@
+{
+  "name": "sports-tech",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "mobile",
+    "web",
+    "shared"
+  ],
+  "scripts": {
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test:mobile": "npm run test --workspace=mobile",
+    "test:web": "npm run test --workspace=web",
+    "build:web": "npm run build --workspace=web"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.3.0",
+    "prettier": "^3.4.2"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ],
+    "*.py": [
+      "ruff format",
+      "ruff check --fix"
+    ]
+  }
+}
