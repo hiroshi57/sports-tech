@@ -1,0 +1,58 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test *)",
+      "Bash(python -m pytest *)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npm run lint)",
+      "Bash(npm run build)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push origin feature/*)",
+      "Bash(git switch *)",
+      "Bash(git checkout *)",
+      "Bash(pip install *)",
+      "Bash(npm install *)",
+      "Bash(npx expo *)"
+    ],
+    "ask": [
+      "Bash(git push origin main)",
+      "Bash(git push origin master)",
+      "Bash(alembic upgrade *)",
+      "Bash(alembic downgrade *)",
+      "Bash(docker *)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Write(./.env)",
+      "Write(./.env.*)",
+      "Write(./secrets/**)",
+      "Bash(vercel --prod *)",
+      "Bash(curl * | bash)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "echo '=== sports-tech セッション開始 ===' && echo '📋 直近タスク:' && head -30 tasks/NEXT_TASKS.md && echo '' && echo '🔄 Git状態:' && git status -sb"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": ".claude/agents/privacy-security-checker.md"
+          }
+        ]
+      }
+    ]
+  }
+}
