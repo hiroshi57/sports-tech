@@ -6,6 +6,7 @@ from app.schemas.athlete import (
     AthleteProfileSummary,
     AthleteProfileUpdate,
 )
+from app.schemas.auth import LoginRequest, MeResponse, RegisterRequest, TokenResponse
 from app.schemas.user import UserCreate, UserResponse
 from app.schemas.video import (
     AnalysisResultResponse,
@@ -15,6 +16,10 @@ from app.schemas.video import (
 )
 
 __all__ = [
+    "RegisterRequest",
+    "LoginRequest",
+    "TokenResponse",
+    "MeResponse",
     "UserCreate",
     "UserResponse",
     "AthleteProfileCreate",
