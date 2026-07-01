@@ -1,0 +1,63 @@
+"""AthleteProfile スキーマ。"""
+
+import uuid
+from datetime import datetime
+
+from pydantic import BaseModel, Field
+
+
+class AthleteProfileCreate(BaseModel):
+    """選手プロフィール作成リクエスト。"""
+
+    name: str = Field(..., min_length=1, max_length=100)
+    position: str | None = Field(None, max_length=50)
+    sport: str = Field("football", max_length=50)
+    location: str | None = Field(None, max_length=100)
+    bio: str | None = None
+    height_cm: float | None = Field(None, gt=0, le=300)
+    weight_kg: float | None = Field(None, gt=0, le=300)
+    is_public: bool = False
+
+
+class AthleteProfileUpdate(BaseModel):
+    """選手プロフィール更新リクエスト（全フィールド任意）。"""
+
+    name: str | None = Field(None, min_length=1, max_length=100)
+    position: str | None = Field(None, max_length=50)
+    location: str | None = Field(None, max_length=100)
+    bio: str | None = None
+    height_cm: float | None = Field(None, gt=0, le=300)
+    weight_kg: float | None = Field(None, gt=0, le=300)
+    is_public: bool | None = None
+
+
+class AthleteProfileResponse(BaseModel):
+    """選手プロフィールレスポンス。"""
+
+    model_config = {"from_attributes": True}
+
+    id: uuid.UUID
+    user_id: uuid.UUID
+    name: str
+    position: str | None
+    sport: str
+    location: str | None
+    bio: str | None
+    height_cm: float | None
+    weight_kg: float | None
+    is_public: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class AthleteProfileSummary(BaseModel):
+    """スカウト検索向け要約レスポンス（個人情報を最小化）。"""
+
+    model_config = {"from_attributes": True}
+
+    id: uuid.UUID
+    name: str
+    position: str | None
+    sport: str
+    location: str | None
+    is_public: bool
