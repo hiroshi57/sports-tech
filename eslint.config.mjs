@@ -4,6 +4,7 @@ import tsParser from "@typescript-eslint/parser";
 import reactPlugin from "eslint-plugin-react";
 import reactHooksPlugin from "eslint-plugin-react-hooks";
 import prettierConfig from "eslint-config-prettier";
+import globals from "globals";
 
 /** @type {import("eslint").Linter.FlatConfig[]} */
 export default [
@@ -35,6 +36,10 @@ export default [
         sourceType: "module",
         ecmaFeatures: { jsx: true },
       },
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
     },
     plugins: {
       "@typescript-eslint": tsPlugin,
@@ -64,6 +69,16 @@ export default [
     },
     settings: {
       react: { version: "detect" },
+    },
+  },
+
+  // テストファイル: jest グローバルを許可
+  {
+    files: ["**/__tests__/**/*.{ts,tsx}", "**/*.test.{ts,tsx}"],
+    languageOptions: {
+      globals: {
+        ...globals.jest,
+      },
     },
   },
 
