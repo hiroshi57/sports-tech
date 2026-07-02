@@ -11,6 +11,8 @@
 | [[docs/REQUIREMENTS]] | 要件定義書（機能・非機能・スコープ） |
 | [[docs/PROCEDURE]] | 実装手順書（フェーズ別ロードマップ） |
 | [[docs/HOOK]] | フック設計書（自動化・品質チェック） |
+| [[Next.task]] | プロダクト磨き上げタスク100（Step構成） |
+| [[docs/COMMERCIALIZATION_TASKS]] | 外販ロードマップ100（事業・営業・法務） |
 | [[tasks/NEXT_TASKS]] | 直近タスク・優先順位 |
 | [[tasks/todo]] | 全タスク一覧 |
 | [[tasks/lessons]] | 学習メモ・ふりかえり |
