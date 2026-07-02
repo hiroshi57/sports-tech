@@ -7,6 +7,31 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.models.video import VideoStatus
 
+# ── リクエスト ──────────────────────────────────────────────────────
+
+
+class VideoUploadInitRequest(BaseModel):
+    """動画アップロード開始リクエスト。"""
+
+    filename: str | None = Field(None, max_length=255, description="元のファイル名")
+    content_type: str = Field(
+        "video/mp4",
+        description="動画の MIME タイプ (video/mp4, video/quicktime 等)",
+    )
+    file_size_bytes: int | None = Field(
+        None,
+        gt=0,
+        le=500 * 1024 * 1024,  # 500 MB
+        description="ファイルサイズ（バイト）",
+    )
+
+
+class VideoCompleteRequest(BaseModel):
+    """動画アップロード完了通知リクエスト。"""
+
+    duration_sec: int | None = Field(None, gt=0, description="動画の長さ（秒）")
+
+
 SCORE_MIN = 0.0
 SCORE_MAX = 100.0
 
@@ -20,8 +45,20 @@ class VideoUploadResponse(BaseModel):
     """動画アップロード開始レスポンス（Presigned URL 含む）。"""
 
     video_id: uuid.UUID
-    presigned_url: str
+    presigned_url: str  # PUT でこの URL に直接アップロードする
     s3_key: str
+    expires_in_sec: int = 3600
+    instructions: str = (
+        "presigned_url に Content-Type ヘッダー付きで PUT リクエストを送信してください。"
+        "アップロード完了後は POST /videos/{video_id}/complete を呼んでください。"
+    )
+
+
+class VideoDownloadUrlResponse(BaseModel):
+    """動画再生用 Presigned URL レスポンス。"""
+
+    video_id: uuid.UUID
+    download_url: str
     expires_in_sec: int = 3600
 
 
