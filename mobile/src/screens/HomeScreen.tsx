@@ -3,13 +3,17 @@
  */
 
 import React, { useCallback, useEffect, useState } from "react";
-import { FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useAuth } from "../hooks/useAuth";
 import * as api from "../utils/api";
 import { colors, statusLabels } from "../utils/theme";
 
-export default function HomeScreen() {
+interface Props {
+  onSelectVideo: (videoId: string) => void;
+}
+
+export default function HomeScreen({ onSelectVideo }: Props) {
   const { user } = useAuth();
   const [videos, setVideos] = useState<api.VideoResponse[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -59,8 +63,14 @@ export default function HomeScreen() {
             label: item.status,
             color: colors.textMuted,
           };
+          const isCompleted = item.status === "completed";
           return (
-            <View style={styles.card} testID={`video-${item.id}`}>
+            <TouchableOpacity
+              style={styles.card}
+              testID={`video-${item.id}`}
+              disabled={!isCompleted}
+              onPress={() => onSelectVideo(item.id)}
+            >
               <Text style={styles.cardTitle} numberOfLines={1}>
                 {item.s3_key.split("/").pop()}
               </Text>
@@ -68,7 +78,8 @@ export default function HomeScreen() {
               {item.duration_sec ? (
                 <Text style={styles.cardMeta}>{item.duration_sec} 秒</Text>
               ) : null}
-            </View>
+              {isCompleted ? <Text style={styles.cardCta}>タップして分析結果を見る →</Text> : null}
+            </TouchableOpacity>
           );
         }}
       />
@@ -98,4 +109,5 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 14, fontWeight: "600", color: colors.text },
   cardStatus: { fontSize: 12, marginTop: 4 },
   cardMeta: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+  cardCta: { fontSize: 12, color: colors.accent, marginTop: 6, fontWeight: "600" },
 });

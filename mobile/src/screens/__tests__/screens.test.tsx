@@ -94,6 +94,22 @@ describe("ログイン後のタブ操作", () => {
           s3_key: "videos/p/x.mp4",
         },
       },
+      "/api/videos/v-1/analysis": {
+        status: 200,
+        body: {
+          id: "a-1",
+          video_id: "v-1",
+          sprint_score: 72.5,
+          ball_control_score: 65,
+          positioning_score: 80,
+          body_usage_score: 58,
+          total_score: 69.4,
+          confidence: 0.1,
+          feedback: "【開発中】このスコアはプレースホルダーです。",
+          analyzed_at: "2026-07-02T00:00:00Z",
+          is_reference_score: true,
+        },
+      },
       "/api/videos": {
         status: 200,
         body: [
@@ -132,5 +148,26 @@ describe("ログイン後のタブ操作", () => {
     fireEvent.press(getByTestId("tab-profile"));
     fireEvent.press(getByTestId("logout-button"));
     await waitFor(() => expect(getByTestId("login-email-input")).toBeTruthy());
+  });
+
+  it("完了動画をタップするとスコア画面が開きレーダーチャートが表示される", async () => {
+    const { getByTestId } = await loginToHome();
+    await waitFor(() => expect(getByTestId("video-v-1")).toBeTruthy());
+
+    fireEvent.press(getByTestId("video-v-1"));
+
+    await waitFor(() => expect(getByTestId("radar-chart")).toBeTruthy());
+    expect(getByTestId("score-total")).toBeTruthy();
+    expect(getByTestId("score-disclaimer")).toBeTruthy();
+  });
+
+  it("スコア画面から戻るとホームに戻る", async () => {
+    const { getByTestId } = await loginToHome();
+    await waitFor(() => expect(getByTestId("video-v-1")).toBeTruthy());
+    fireEvent.press(getByTestId("video-v-1"));
+    await waitFor(() => expect(getByTestId("score-back")).toBeTruthy());
+
+    fireEvent.press(getByTestId("score-back"));
+    await waitFor(() => expect(getByTestId("video-v-1")).toBeTruthy());
   });
 });

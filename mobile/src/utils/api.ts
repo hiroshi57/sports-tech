@@ -125,3 +125,23 @@ export function completeUpload(videoId: string, durationSec?: number): Promise<V
     duration_sec: durationSec,
   });
 }
+
+// ── 分析結果 ────────────────────────────────────────────────────────
+
+export interface AnalysisResultResponse {
+  id: string;
+  video_id: string;
+  sprint_score: number;
+  ball_control_score: number;
+  positioning_score: number;
+  body_usage_score: number;
+  total_score: number;
+  confidence: number;
+  feedback: string | null;
+  analyzed_at: string;
+  is_reference_score: boolean;
+}
+
+export function fetchAnalysis(videoId: string): Promise<AnalysisResultResponse> {
+  return request<AnalysisResultResponse>("GET", `/api/videos/${videoId}/analysis`);
+}
