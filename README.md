@@ -26,32 +26,61 @@ sports-tech/
 
 ## 技術スタック
 
-| レイヤー | 技術 |
-|---|---|
-| モバイル | React Native + Expo |
-| バックエンド | FastAPI + Celery |
-| Web | Next.js |
-| AI/ML | MediaPipe + カスタムモデル |
-| DB | PostgreSQL + pgvector |
-| ストレージ | AWS S3 |
-| 認証 | Supabase Auth |
+| レイヤー     | 技術                       |
+| ------------ | -------------------------- |
+| モバイル     | React Native + Expo        |
+| バックエンド | FastAPI + Celery           |
+| Web          | Next.js                    |
+| AI/ML        | MediaPipe + カスタムモデル |
+| DB           | PostgreSQL + pgvector      |
+| ストレージ   | AWS S3                     |
+| 認証         | Supabase Auth              |
 
 ---
 
 ## セットアップ
 
 ### 前提環境
+
 - Node.js 20.x 以上
 - Python 3.11 以上
 - Expo CLI
+- Docker / Docker Compose（バックエンド一式をまとめて起動する場合）
 
-### バックエンド
+### Docker Compose（推奨: DB + Redis + API + Worker を一括起動）
+
+```bash
+# 初回はビルドから
+docker compose up --build
+
+# API:   http://localhost:8000  (Swagger: /docs)
+# DB:    localhost:5432 (postgres)
+# Redis: localhost:6379
+
+# DB と Redis だけ起動したい場合
+docker compose up -d db redis
+
+# 停止（データは pgdata ボリュームに保持）
+docker compose down
+```
+
+起動時に `alembic upgrade head` が自動実行され、動画分析は Celery worker が
+Redis 経由で非同期処理します。`backend/` はボリュームマウントされ、
+コード変更は `--reload` で即反映されます。
+
+> **注意**: `docker-compose.yml` はローカル/検証用です。本番デプロイには使用しません。
+
+### バックエンド（Docker を使わない場合）
 
 ```bash
 cd backend
 pip install -r requirements.txt
 cp .env.example .env  # 環境変数を設定
+alembic upgrade head  # DB マイグレーション
 uvicorn app.main:app --reload
+
+# 別ターミナルで Celery worker を起動（AI分析の非同期処理に必要）
+celery -A app.worker.celery_app worker --loglevel=info
 ```
 
 ### モバイルアプリ
