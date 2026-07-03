@@ -60,6 +60,22 @@ def patch_worker_session(session_factory):
         yield
 
 
+@pytest.fixture(autouse=True)
+def default_pose_unavailable():
+    """
+    既定で姿勢推定を利用不可にし、実 S3 アクセスを防ぐ（スタブ動作）。
+
+    ポーズパスを検証するテストは各自 patch で上書きする。
+    """
+    from app.services.pose_estimation import PoseEstimationError
+
+    with patch(
+        "app.services.analysis_engine.extract_pose_from_s3",
+        side_effect=PoseEstimationError("disabled in tests"),
+    ):
+        yield
+
+
 @pytest.fixture(scope="module")
 def client(session_factory):
     def override_get_db():
@@ -130,11 +146,23 @@ def _auth(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
-# ── 分析エンジン（スタブ）単体 ───────────────────────────────────────
+# ── 分析エンジン（スタブフォールバック）単体 ─────────────────────────
+
+
+@pytest.fixture
+def force_pose_unavailable():
+    """姿勢推定を利用不可にしてスタブフォールバックを強制する。"""
+    from app.services.pose_estimation import PoseEstimationError
+
+    with patch(
+        "app.services.analysis_engine.extract_pose_from_s3",
+        side_effect=PoseEstimationError("no mediapipe"),
+    ):
+        yield
 
 
 class TestAnalysisEngine:
-    def test_scores_in_valid_range(self) -> None:
+    def test_scores_in_valid_range(self, force_pose_unavailable) -> None:
         """全スコアが 0〜100 に収まる。"""
         scores = analysis_engine.analyze(uuid.uuid4(), "videos/x/y.mp4")
         for v in (
@@ -146,18 +174,52 @@ class TestAnalysisEngine:
         ):
             assert 0 <= v <= 100
 
-    def test_deterministic_for_same_video(self) -> None:
+    def test_deterministic_for_same_video(self, force_pose_unavailable) -> None:
         """同じ動画 ID なら同じスコアを返す（スタブの決定論性）。"""
         vid = uuid.uuid4()
         a = analysis_engine.analyze(vid, "k")
         b = analysis_engine.analyze(vid, "k")
         assert a == b
 
-    def test_low_confidence_and_stub_feedback(self) -> None:
+    def test_low_confidence_and_stub_feedback(self, force_pose_unavailable) -> None:
         """スタブは低 confidence + 開発中の注記を返す。"""
         scores = analysis_engine.analyze(uuid.uuid4(), "k")
         assert scores.confidence == analysis_engine.STUB_CONFIDENCE
         assert "プレースホルダー" in scores.feedback
+
+    def test_falls_back_to_stub_on_download_error(self) -> None:
+        """S3 ダウンロード失敗時もスタブにフォールバックする。"""
+        with patch(
+            "app.services.analysis_engine.extract_pose_from_s3",
+            side_effect=RuntimeError("s3 down"),
+        ):
+            scores = analysis_engine.analyze(uuid.uuid4(), "k")
+        assert scores.confidence == analysis_engine.STUB_CONFIDENCE
+
+    def test_uses_pose_scores_when_available(self) -> None:
+        """ポーズが十分に取れれば姿勢ベースのスコア（高 confidence）を返す。"""
+        from tests.analysis.test_scoring import make_walking_sequence
+
+        with patch(
+            "app.services.analysis_engine.extract_pose_from_s3",
+            return_value=make_walking_sequence(),
+        ):
+            scores = analysis_engine.analyze(uuid.uuid4(), "k")
+        assert scores.confidence == analysis_engine.POSE_BASE_CONFIDENCE
+        assert "姿勢推定" in scores.feedback
+        assert 0 <= scores.total_score <= 100
+
+    def test_short_sequence_falls_back_to_stub(self) -> None:
+        """フレーム数が少なすぎる場合はスタブにフォールバックする。"""
+        from app.services.pose_estimation import PoseFrame, PoseSequence
+
+        short_seq = PoseSequence(frames=[PoseFrame(landmarks=[])], fps=30.0)
+        with patch(
+            "app.services.analysis_engine.extract_pose_from_s3",
+            return_value=short_seq,
+        ):
+            scores = analysis_engine.analyze(uuid.uuid4(), "k")
+        assert scores.confidence == analysis_engine.STUB_CONFIDENCE
 
 
 # ── analyze_video タスク ─────────────────────────────────────────────

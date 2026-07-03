@@ -1,20 +1,35 @@
-"""AI 分析エンジン（Phase 2 スタブ実装）。
+"""AI 分析エンジン。
 
-現段階では MediaPipe / 姿勢推定は未接続のため、動画 ID から決定論的に
-プレースホルダースコアを生成する。confidence を低く設定し、
-フィードバックにスタブであることを明記する。
+MediaPipe による姿勢推定 → 運動学的スコアリングを実行する。
+mediapipe / opencv が利用できない環境（テスト・未構築環境）や、
+動画が短すぎてポーズを抽出できない場合は決定論的スタブにフォールバックする。
 
-Phase 2 で以下に置き換える:
-- S3 から動画ダウンロード
-- MediaPipe による骨格抽出
-- スプリント / ボールコントロール / ポジショニング / 身体の使い方の各スコア算出
+パイプライン:
+1. S3 から動画ダウンロード（pose_estimation.extract_pose_from_s3）
+2. MediaPipe で 33 ランドマーク時系列を抽出
+3. scoring モジュールで 4 スコアを算出
+4. 総合スコアを加重平均で算出
+
+スコア算出ロジックの本格モデルへの差し替えは外販ロードマップ #4〜#7、
+精度検証は #21 で行う。
 """
 
 from __future__ import annotations
 
 import hashlib
+import logging
 import uuid
 from dataclasses import dataclass
+
+from app.services import scoring
+from app.services.pose_estimation import (
+    PoseEstimationError,
+    PoseSequence,
+    extract_pose_from_s3,
+)
+from app.services.scoring import MIN_FRAMES_FOR_SCORING
+
+logger = logging.getLogger(__name__)
 
 # スタブ実装の信頼度（本実装で動画品質から算出する）
 STUB_CONFIDENCE = 0.1
@@ -22,6 +37,15 @@ STUB_CONFIDENCE = 0.1
 STUB_FEEDBACK = (
     "【開発中】このスコアはプレースホルダーです。"
     "AI 分析エンジン（姿勢推定）は現在開発中のため、正式なスコアではありません。"
+    "スコアはあくまで参考値であり、選手評価の唯一の根拠として使用しないでください。"
+)
+
+# 姿勢推定成功時の基準信頼度（Phase 1 ヒューリスティックのため控えめ）
+POSE_BASE_CONFIDENCE = 0.5
+
+POSE_FEEDBACK = (
+    "姿勢推定に基づく分析結果です（Phase 1 ヒューリスティック）。"
+    "ボールコントロールは下肢の動作から近似しており、精度は限定的です。"
     "スコアはあくまで参考値であり、選手評価の唯一の根拠として使用しないでください。"
 )
 
@@ -50,21 +74,62 @@ def analyze(video_id: uuid.UUID, s3_key: str) -> AnalysisScores:
     """
     動画を分析してスコアを返す。
 
+    姿勢推定パイプラインを試み、利用不可 or 失敗時はスタブにフォールバックする。
+
     Args:
         video_id: 対象動画の ID
-        s3_key: S3 オブジェクトキー（Phase 2 でダウンロードに使用）
+        s3_key: S3 オブジェクトキー
 
     Returns:
-        AnalysisScores（現段階では決定論的スタブ値）
+        AnalysisScores
     """
-    del s3_key  # Phase 2 で使用
+    try:
+        seq = extract_pose_from_s3(s3_key)
+    except PoseEstimationError as exc:
+        logger.info("姿勢推定を利用できません（%s）— スタブにフォールバック", exc)
+        return _stub_scores(video_id)
+    except Exception as exc:  # 動画破損・DL 失敗など
+        logger.warning("姿勢推定に失敗（video=%s）: %s — スタブにフォールバック", video_id, exc)
+        return _stub_scores(video_id)
 
+    if len(seq.frames) < MIN_FRAMES_FOR_SCORING:
+        logger.info(
+            "ポーズ検出フレームが不足（%d < %d）— スタブにフォールバック",
+            len(seq.frames),
+            MIN_FRAMES_FOR_SCORING,
+        )
+        return _stub_scores(video_id)
+
+    return _score_from_pose(seq)
+
+
+def _score_from_pose(seq: PoseSequence) -> AnalysisScores:
+    """ポーズ時系列からスコアを算出する。"""
+    sprint = scoring.compute_sprint_score(seq)
+    ball = scoring.compute_ball_control_score(seq)
+    positioning = scoring.compute_positioning_score(seq)
+    body = scoring.compute_body_usage_score(seq)
+
+    total = round(sprint * 0.3 + ball * 0.3 + positioning * 0.2 + body * 0.2, 1)
+
+    return AnalysisScores(
+        sprint_score=sprint,
+        ball_control_score=ball,
+        positioning_score=positioning,
+        body_usage_score=body,
+        total_score=total,
+        confidence=POSE_BASE_CONFIDENCE,
+        feedback=POSE_FEEDBACK,
+    )
+
+
+def _stub_scores(video_id: uuid.UUID) -> AnalysisScores:
+    """決定論的スタブスコア（姿勢推定が使えない場合のフォールバック）。"""
     sprint = _deterministic_score(video_id, "sprint")
     ball = _deterministic_score(video_id, "ball_control")
     positioning = _deterministic_score(video_id, "positioning")
     body = _deterministic_score(video_id, "body_usage")
 
-    # 総合スコア: 単純加重平均（重みは Phase 2 で調整）
     total = round(sprint * 0.3 + ball * 0.3 + positioning * 0.2 + body * 0.2, 1)
 
     return AnalysisScores(
