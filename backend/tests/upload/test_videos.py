@@ -42,6 +42,13 @@ def test_session_factory(test_engine):
     return sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
 
+@pytest.fixture(autouse=True)
+def _no_celery_dispatch():
+    """Celery broker への接続を防ぐ（タイムアウト待ちでテストが遅くなるため）。"""
+    with patch("app.worker.tasks.dispatch_analysis", return_value=None):
+        yield
+
+
 @pytest.fixture(scope="module")
 def client(test_engine, test_session_factory):
     def override_get_db():

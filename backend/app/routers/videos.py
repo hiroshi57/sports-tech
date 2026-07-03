@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import AthleteOnly, CurrentUser
 from app.schemas.video import (
+    AnalysisResultResponse,
     VideoCompleteRequest,
     VideoDownloadUrlResponse,
     VideoResponse,
@@ -117,6 +118,26 @@ def get_video(
     """動画のメタデータと処理ステータスを返す。所有者のみアクセス可能。"""
     video = video_service.get_video(db, video_id, current_user)
     return VideoResponse.model_validate(video)
+
+
+@router.get(
+    "/{video_id}/analysis",
+    response_model=AnalysisResultResponse,
+    summary="動画の AI 分析結果を取得する",
+)
+def get_video_analysis(
+    video_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
+) -> AnalysisResultResponse:
+    """
+    AI 分析結果（5 スコア + フィードバック）を返す。所有者のみアクセス可能。
+
+    スコアは参考値（`is_reference_score: true`）であり、
+    選手評価の唯一の根拠として使用しないこと。
+    """
+    result = video_service.get_video_analysis(db, video_id, current_user)
+    return AnalysisResultResponse.from_orm_with_alias(result)
 
 
 @router.get(

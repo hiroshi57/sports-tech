@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 from app.core import s3 as s3_client
 from app.models.athlete import AthleteProfile
 from app.models.user import User, UserRole
-from app.models.video import Video, VideoStatus
+from app.models.video import AnalysisResult, Video, VideoStatus
 from app.schemas.video import VideoUploadInitRequest
 
 
@@ -111,18 +111,20 @@ def initiate_upload(
 
 def complete_upload(db: Session, video_id: uuid.UUID, user: User) -> Video:
     """
-    動画アップロード完了を通知する。
+    動画アップロード完了を通知し、AI 分析タスクをキューに投入する。
 
     クライアントが S3 への PUT を終えた後に呼ぶ。
-    ステータスを PENDING のまま維持し、Celery タスク投入の準備をする。
-
-    NOTE:
-        実際の Celery タスク投入は Phase 2（AI分析エンジン）で実装する。
-        現段階では status を PENDING に保つだけ。
+    タスク投入に失敗しても API は成功を返す（動画は PENDING のまま残り、
+    再投入で回収できる）。
 
     Returns:
         更新された Video オブジェクト
     """
+    # 循環 import 回避のため関数内 import
+    # (worker.tasks → core.database / models → services には依存しないが、
+    #  サービス層をワーカー非依存に保つ意図もある)
+    from app.worker.tasks import dispatch_analysis
+
     video = _get_video_owned_by_user(db, video_id, user)
 
     if video.status != VideoStatus.PENDING:
@@ -131,9 +133,10 @@ def complete_upload(db: Session, video_id: uuid.UUID, user: User) -> Video:
             detail=f"この動画は既に処理中です (status={video.status.value})",
         )
 
-    # TODO (Phase 2): Celery タスクをキューに投入
-    # task = analyze_video.delay(str(video.id))
-    # video.celery_task_id = task.id
+    # ── AI 分析タスクをキューに投入 ─────────────────────────────────
+    task_id = dispatch_analysis(video.id)
+    if task_id is not None:
+        video.celery_task_id = task_id
 
     db.commit()
     db.refresh(video)
@@ -182,6 +185,35 @@ def delete_video(db: Session, video_id: uuid.UUID, user: User) -> None:
 
     db.delete(video)
     db.commit()
+
+
+def get_video_analysis(db: Session, video_id: uuid.UUID, user: User) -> AnalysisResult:
+    """
+    動画の AI 分析結果を取得する（所有者のみ）。
+
+    Raises:
+        404: 動画が存在しない / 分析結果がまだない
+        403: 動画の所有者でない
+        409: 分析が未完了（PENDING / PROCESSING）
+    """
+    video = _get_video_owned_by_user(db, video_id, user)
+
+    if video.status in (VideoStatus.PENDING, VideoStatus.PROCESSING):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"分析が完了していません (status={video.status.value})",
+        )
+
+    result = db.execute(
+        select(AnalysisResult).where(AnalysisResult.video_id == video.id)
+    ).scalar_one_or_none()
+
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="分析結果が見つかりません",
+        )
+    return result
 
 
 def get_video_download_url(db: Session, video_id: uuid.UUID, user: User) -> str:

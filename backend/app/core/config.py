@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://user:password@localhost:5432/sportstech"
     REDIS_URL: str = "redis://localhost:6379/0"
 
+    # Celery: テストでは true にして同期実行する
+    CELERY_TASK_ALWAYS_EAGER: bool = False
+
     JWT_SECRET_KEY: str = "change-me-in-production"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
