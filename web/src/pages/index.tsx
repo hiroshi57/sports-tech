@@ -1,4 +1,5 @@
 import Head from "next/head";
+import Link from "next/link";
 import { Geist } from "next/font/google";
 import styles from "@/styles/Home.module.css";
 
@@ -56,9 +57,9 @@ export default function Home() {
           <span className={styles.logo}>⚽ sports-tech</span>
           <nav className={styles.nav}>
             {NAV_LINKS.map((link) => (
-              <a key={link.href} href={link.href} className={styles.navLink}>
+              <Link key={link.href} href={link.href} className={styles.navLink}>
                 {link.label}
-              </a>
+              </Link>
             ))}
           </nav>
         </header>
@@ -73,12 +74,12 @@ export default function Home() {
               スカウトと選手をつなぐ、次世代のスポーツプラットフォーム。
             </p>
             <div className={styles.ctas}>
-              <a href="/athlete/register" className={styles.primary}>
+              <Link href="/athlete/register" className={styles.primary}>
                 選手として登録する
-              </a>
-              <a href="/scout/search" className={styles.secondary}>
+              </Link>
+              <Link href="/scout/search" className={styles.secondary}>
                 スカウトとして探す
-              </a>
+              </Link>
             </div>
           </section>
 

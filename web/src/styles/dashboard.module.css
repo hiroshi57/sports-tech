@@ -1,0 +1,168 @@
+.page {
+  min-height: 100vh;
+  background: #f7f8fa;
+  color: #1a1a2e;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.brand {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.heading {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+  align-items: flex-end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.input {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+}
+
+.button {
+  padding: 10px 20px;
+  background: #0f6fff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  display: block;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.15s;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cardName {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.cardMeta {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.score {
+  margin-top: 12px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f6fff;
+}
+
+.scoreLabel {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.empty,
+.error,
+.loading {
+  text-align: center;
+  color: #6b7280;
+  margin-top: 48px;
+}
+
+.error {
+  color: #dc2626;
+}
+
+.disclaimer {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 32px;
+  line-height: 1.6;
+}
+
+.loginBox {
+  max-width: 380px;
+  margin: 80px auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 32px;
+}
+
+.loginTitle {
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.fullWidth {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.link {
+  color: #0f6fff;
+  text-decoration: none;
+  font-size: 14px;
+}
