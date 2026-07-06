@@ -33,7 +33,7 @@ export class ApiClientError extends Error {
 }
 
 async function request<T>(
-  method: "GET" | "POST" | "DELETE",
+  method: "GET" | "POST" | "PATCH" | "DELETE",
   path: string,
   body?: unknown
 ): Promise<T> {
@@ -144,4 +144,53 @@ export interface AnalysisResultResponse {
 
 export function fetchAnalysis(videoId: string): Promise<AnalysisResultResponse> {
   return request<AnalysisResultResponse>("GET", `/api/videos/${videoId}/analysis`);
+}
+
+// ── 活動記録（練習ログ）────────────────────────────────────────────
+
+export type ActivityType = "practice" | "match" | "rest";
+
+export interface ActivityLog {
+  id: string;
+  athlete_id: string;
+  activity_date: string;
+  activity_type: ActivityType;
+  duration_min: number;
+  fatigue_level: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ActivitySummary {
+  total_count: number;
+  total_duration_min: number;
+  avg_fatigue_level: number | null;
+  practice_count: number;
+  match_count: number;
+  rest_count: number;
+}
+
+export interface ActivityCreateInput {
+  activity_date: string;
+  activity_type: ActivityType;
+  duration_min: number;
+  fatigue_level: number;
+  notes?: string;
+}
+
+export function listActivities(): Promise<ActivityLog[]> {
+  return request<ActivityLog[]>("GET", "/api/activities");
+}
+
+export function createActivity(input: ActivityCreateInput): Promise<ActivityLog> {
+  return request<ActivityLog>("POST", "/api/activities", input);
+}
+
+export function deleteActivity(activityId: string): Promise<void> {
+  return request<void>("DELETE", `/api/activities/${activityId}`);
+}
+
+export function fetchActivitySummary(): Promise<ActivitySummary> {
+  return request<ActivitySummary>("GET", "/api/activities/summary");
 }

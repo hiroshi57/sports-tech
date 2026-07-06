@@ -110,6 +110,21 @@ describe("ログイン後のタブ操作", () => {
           is_reference_score: true,
         },
       },
+      "/api/activities/summary": {
+        status: 200,
+        body: {
+          total_count: 0,
+          total_duration_min: 0,
+          avg_fatigue_level: null,
+          practice_count: 0,
+          match_count: 0,
+          rest_count: 0,
+        },
+      },
+      "/api/activities": {
+        status: 200,
+        body: [],
+      },
       "/api/videos": {
         status: 200,
         body: [
@@ -169,5 +184,13 @@ describe("ログイン後のタブ操作", () => {
 
     fireEvent.press(getByTestId("score-back"));
     await waitFor(() => expect(getByTestId("video-v-1")).toBeTruthy());
+  });
+
+  it("活動記録タブで記録フォームが表示される", async () => {
+    const { getByTestId } = await loginToHome();
+    fireEvent.press(getByTestId("tab-activity"));
+    await waitFor(() => expect(getByTestId("add-activity")).toBeTruthy());
+    expect(getByTestId("type-practice")).toBeTruthy();
+    expect(getByTestId("fatigue-3")).toBeTruthy();
   });
 });
