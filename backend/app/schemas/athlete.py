@@ -61,3 +61,17 @@ class AthleteProfileSummary(BaseModel):
     sport: str
     location: str | None
     is_public: bool
+
+
+class AthleteSearchItem(BaseModel):
+    """スカウト検索結果 1 件（要約 + 最新総合スコア）。"""
+
+    id: uuid.UUID
+    name: str
+    position: str | None
+    sport: str
+    location: str | None
+    height_cm: float | None
+    weight_kg: float | None
+    latest_total_score: float | None
+    is_reference_score: bool = True  # スコアは常に参考値
