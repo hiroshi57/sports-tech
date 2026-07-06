@@ -14,11 +14,19 @@ import logging
 import uuid
 
 from app.core.database import SessionLocal
+from app.models.athlete import AthleteProfile
 from app.models.video import AnalysisResult, Video, VideoStatus
-from app.services import analysis_engine
+from app.services import analysis_engine, notification_service
 from app.worker.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
+
+
+def _resolve_user_id(db, athlete_id: uuid.UUID) -> uuid.UUID | None:
+    """athlete_id から通知先の user_id を解決する。"""
+    profile = db.get(AthleteProfile, athlete_id)
+    return profile.user_id if profile is not None else None
+
 
 MAX_RETRIES = 3
 RETRY_BACKOFF_SEC = 30
@@ -81,7 +89,13 @@ def analyze_video(self, video_id: str) -> dict:
             )
             db.add(result)
             video.status = VideoStatus.COMPLETED
+            athlete_id = video.athlete_id
             db.commit()
+
+            # ── 分析完了通知（失敗しても本処理は止めない）─────────────
+            user_id = _resolve_user_id(db, athlete_id)
+            if user_id is not None:
+                notification_service.notify_analysis_completed(db, user_id, vid)
 
             logger.info(
                 "analyze_video: video %s completed (total=%s)", video_id, scores.total_score
@@ -108,7 +122,11 @@ def analyze_video(self, video_id: str) -> dict:
             video = db.get(Video, vid)
             if video is not None:
                 video.status = VideoStatus.FAILED
+                athlete_id = video.athlete_id
                 db.commit()
+                user_id = _resolve_user_id(db, athlete_id)
+                if user_id is not None:
+                    notification_service.notify_analysis_failed(db, user_id, vid)
             logger.error("analyze_video: video %s permanently failed: %s", video_id, exc)
             return {"video_id": video_id, "status": VideoStatus.FAILED.value, "error": str(exc)}
     finally:
