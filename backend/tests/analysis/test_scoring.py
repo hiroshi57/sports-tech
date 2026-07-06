@@ -113,3 +113,32 @@ class TestOscillationRate:
         values = [math.sin(2 * math.pi * 2 * (i / fps)) for i in range(int(fps))]
         rate = scoring._oscillation_rate(values, fps)
         assert 1.5 <= rate <= 2.5
+
+
+class TestAccelerations:
+    def test_constant_velocity_has_zero_acceleration(self) -> None:
+        """等速なら加速度は 0。"""
+        accels = scoring._accelerations([0.5, 0.5, 0.5], fps=30.0)
+        assert all(a == 0 for a in accels)
+
+    def test_increasing_velocity_positive_acceleration(self) -> None:
+        """増速すると正の加速度が出る。"""
+        accels = scoring._accelerations([0.1, 0.3, 0.6], fps=30.0)
+        assert all(a > 0 for a in accels)
+
+
+class TestDirectionChanges:
+    def test_counts_reversals(self) -> None:
+        """右→左→右の切り返しを 2 回として数える。"""
+        pts = [(0.0, 0.5), (0.2, 0.5), (0.1, 0.5), (0.3, 0.5)]
+        assert scoring._direction_changes(pts) == 2
+
+    def test_straight_movement_no_changes(self) -> None:
+        """一方向の移動は方向転換 0。"""
+        pts = [(0.0, 0.5), (0.2, 0.5), (0.4, 0.5), (0.6, 0.5)]
+        assert scoring._direction_changes(pts) == 0
+
+    def test_ignores_micro_movement(self) -> None:
+        """min_move 未満の微小揺れはノイズとして無視する。"""
+        pts = [(0.0, 0.5), (0.001, 0.5), (-0.001, 0.5), (0.002, 0.5)]
+        assert scoring._direction_changes(pts, min_move=0.01) == 0
