@@ -255,3 +255,36 @@ class TestDetail:
         token = _scout_token(sf)
         res = client.get(f"/api/scouts/athletes/{uuid.uuid4()}", headers=_auth(token))
         assert res.status_code == 404
+
+
+class TestScores:
+    def test_scores_with_analysis(self, client, sf) -> None:
+        aid = _make_athlete(sf, name="スコア詳細", total_score=70.0)
+        token = _scout_token(sf)
+        res = client.get(f"/api/scouts/athletes/{aid}/scores", headers=_auth(token))
+        assert res.status_code == 200
+        data = res.json()
+        assert data["is_reference_score"] is True
+        assert data["latest"] is not None
+        assert data["latest"]["total_score"] == 70.0
+        assert len(data["history"]) >= 1
+
+    def test_scores_without_analysis(self, client, sf) -> None:
+        aid = _make_athlete(sf, name="分析なし")
+        token = _scout_token(sf)
+        res = client.get(f"/api/scouts/athletes/{aid}/scores", headers=_auth(token))
+        assert res.status_code == 200
+        assert res.json()["latest"] is None
+        assert res.json()["history"] == []
+
+    def test_scores_private_returns_404(self, client, sf) -> None:
+        aid = _make_athlete(sf, name="非公開スコア", is_public=False)
+        token = _scout_token(sf)
+        res = client.get(f"/api/scouts/athletes/{aid}/scores", headers=_auth(token))
+        assert res.status_code == 404
+
+    def test_scores_requires_scout_role(self, client, sf) -> None:
+        aid = _make_athlete(sf, name="ロール確認", total_score=50.0)
+        token = _athlete_token(sf)
+        res = client.get(f"/api/scouts/athletes/{aid}/scores", headers=_auth(token))
+        assert res.status_code == 403

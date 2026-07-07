@@ -116,3 +116,29 @@ export function searchAthletes(filters: SearchFilters): Promise<AthleteSearchIte
 export function getAthlete(id: string): Promise<AthleteSearchItem> {
   return request<AthleteSearchItem>("GET", `/api/scouts/athletes/${id}`);
 }
+
+export interface ScoreSnapshot {
+  sprint_score: number;
+  ball_control_score: number;
+  positioning_score: number;
+  body_usage_score: number;
+  total_score: number;
+  analyzed_at: string;
+}
+
+export interface AthleteScores {
+  id: string;
+  name: string;
+  position: string | null;
+  sport: string;
+  location: string | null;
+  height_cm: number | null;
+  weight_kg: number | null;
+  latest: ScoreSnapshot | null;
+  history: ScoreSnapshot[];
+  is_reference_score: boolean;
+}
+
+export function getAthleteScores(id: string): Promise<AthleteScores> {
+  return request<AthleteScores>("GET", `/api/scouts/athletes/${id}/scores`);
+}

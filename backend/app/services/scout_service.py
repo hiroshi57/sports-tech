@@ -142,3 +142,33 @@ def _latest_total_score(db: Session, athlete_id: uuid.UUID) -> float | None:
         .limit(1)
     )
     return db.execute(stmt).scalar_one_or_none()
+
+
+def get_athlete_scores(
+    db: Session, athlete_id: uuid.UUID, user: User, *, history_limit: int = 10
+) -> tuple[AthleteProfile, AnalysisResult | None, list[AnalysisResult]]:
+    """
+    公開選手の詳細スコア（最新＋履歴）を取得する。
+
+    Returns:
+        (profile, 最新の分析結果 or None, 履歴の分析結果リスト（新しい順）)
+
+    Raises:
+        404: 選手が存在しない / 非公開
+    """
+    # 公開チェックは get_athlete_detail を再利用
+    result = get_athlete_detail(db, athlete_id, user)
+    profile = result.profile
+
+    rows = list(
+        db.execute(
+            select(AnalysisResult)
+            .join(Video, AnalysisResult.video_id == Video.id)
+            .where(Video.athlete_id == athlete_id)
+            .where(Video.status == VideoStatus.COMPLETED)
+            .order_by(AnalysisResult.created_at.desc())
+            .limit(history_limit)
+        ).scalars()
+    )
+    latest = rows[0] if rows else None
+    return profile, latest, rows

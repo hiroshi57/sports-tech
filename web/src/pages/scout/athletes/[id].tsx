@@ -3,13 +3,15 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useState } from "react";
 
-import { ApiError, type AthleteSearchItem, getAthlete, getToken } from "@/lib/api";
+import RadarChart, { type RadarAxis } from "@/components/RadarChart";
+import ScoreHistoryChart from "@/components/ScoreHistoryChart";
+import { ApiError, type AthleteScores, getAthleteScores, getToken } from "@/lib/api";
 import styles from "@/styles/dashboard.module.css";
 
 export default function AthleteDetailPage() {
   const router = useRouter();
   const { id } = router.query;
-  const [athlete, setAthlete] = useState<AthleteSearchItem | null>(null);
+  const [data, setData] = useState<AthleteScores | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -17,7 +19,7 @@ export default function AthleteDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      setAthlete(await getAthlete(athleteId));
+      setData(await getAthleteScores(athleteId));
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
         setError("選手が見つかりませんでした（非公開の可能性があります）。");
@@ -40,10 +42,19 @@ export default function AthleteDetailPage() {
     }
   }, [id, router, load]);
 
+  const axes: RadarAxis[] = data?.latest
+    ? [
+        { label: "スプリント", value: data.latest.sprint_score },
+        { label: "ボール", value: data.latest.ball_control_score },
+        { label: "ポジ", value: data.latest.positioning_score },
+        { label: "身体", value: data.latest.body_usage_score },
+      ]
+    : [];
+
   return (
     <>
       <Head>
-        <title>{athlete ? `${athlete.name} | ` : ""}選手詳細 | sports-tech スカウト</title>
+        <title>{data ? `${data.name} | ` : ""}選手詳細 | sports-tech スカウト</title>
       </Head>
       <div className={styles.page}>
         <header className={styles.header}>
@@ -57,25 +68,39 @@ export default function AthleteDetailPage() {
           {loading ? <p className={styles.loading}>読み込み中…</p> : null}
           {error ? <p className={styles.error}>{error}</p> : null}
 
-          {athlete ? (
+          {data ? (
             <>
-              <h1 className={styles.heading}>{athlete.name}</h1>
+              <h1 className={styles.heading}>{data.name}</h1>
               <p className={styles.cardMeta}>
-                {[athlete.position, athlete.sport, athlete.location].filter(Boolean).join(" ・ ")}
+                {[data.position, data.sport, data.location].filter(Boolean).join(" ・ ")}
               </p>
               <p className={styles.cardMeta}>
                 {[
-                  athlete.height_cm ? `身長 ${athlete.height_cm}cm` : null,
-                  athlete.weight_kg ? `体重 ${athlete.weight_kg}kg` : null,
+                  data.height_cm ? `身長 ${data.height_cm}cm` : null,
+                  data.weight_kg ? `体重 ${data.weight_kg}kg` : null,
                 ]
                   .filter(Boolean)
                   .join(" ・ ") || "身体データ未登録"}
               </p>
 
-              {athlete.latest_total_score != null ? (
+              {data.latest ? (
                 <>
-                  <div className={styles.score}>{athlete.latest_total_score}</div>
+                  <div className={styles.score}>{data.latest.total_score}</div>
                   <div className={styles.scoreLabel}>総合スコア（参考値）</div>
+
+                  <section className={styles.section}>
+                    <h2 className={styles.subheading}>能力バランス</h2>
+                    <div className={styles.chartWrap}>
+                      <RadarChart axes={axes} />
+                    </div>
+                  </section>
+
+                  <section className={styles.section}>
+                    <h2 className={styles.subheading}>総合スコアの推移</h2>
+                    <div className={styles.chartWrap}>
+                      <ScoreHistoryChart history={data.history} />
+                    </div>
+                  </section>
                 </>
               ) : (
                 <p className={styles.cardMeta}>分析データがまだありません。</p>

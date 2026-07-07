@@ -75,3 +75,29 @@ class AthleteSearchItem(BaseModel):
     weight_kg: float | None
     latest_total_score: float | None
     is_reference_score: bool = True  # スコアは常に参考値
+
+
+class ScoreSnapshot(BaseModel):
+    """分析スコアのスナップショット（レーダー・履歴用）。"""
+
+    sprint_score: float
+    ball_control_score: float
+    positioning_score: float
+    body_usage_score: float
+    total_score: float
+    analyzed_at: datetime
+
+
+class AthleteScoresResponse(BaseModel):
+    """選手のスコア詳細（最新 + 履歴）。"""
+
+    id: uuid.UUID
+    name: str
+    position: str | None
+    sport: str
+    location: str | None
+    height_cm: float | None
+    weight_kg: float | None
+    latest: ScoreSnapshot | None
+    history: list[ScoreSnapshot]
+    is_reference_score: bool = True

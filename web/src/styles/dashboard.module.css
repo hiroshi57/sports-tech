@@ -166,3 +166,23 @@
   text-decoration: none;
   font-size: 14px;
 }
+
+.section {
+  margin-top: 32px;
+}
+
+.subheading {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.chartWrap {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+}

@@ -14,7 +14,11 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import ScoutOrCoach
-from app.schemas.athlete import AthleteSearchItem
+from app.schemas.athlete import (
+    AthleteScoresResponse,
+    AthleteSearchItem,
+    ScoreSnapshot,
+)
 from app.services import scout_service
 from app.services.scout_service import AthleteSearchResult
 
@@ -81,3 +85,43 @@ def get_athlete(
     """公開選手の詳細。非公開・未成年同意なしは 404。"""
     result = scout_service.get_athlete_detail(db, athlete_id, current_user)
     return _to_item(result)
+
+
+def _to_snapshot(r) -> ScoreSnapshot:
+    return ScoreSnapshot(
+        sprint_score=r.sprint_score,
+        ball_control_score=r.ball_control_score,
+        positioning_score=r.positioning_score,
+        body_usage_score=r.body_usage_score,
+        total_score=r.total_score,
+        analyzed_at=r.created_at,
+    )
+
+
+@router.get(
+    "/athletes/{athlete_id}/scores",
+    response_model=AthleteScoresResponse,
+    summary="公開選手のスコア詳細（最新+履歴）を取得する",
+)
+def get_athlete_scores(
+    athlete_id: uuid.UUID,
+    current_user: ScoutOrCoach,
+    db: Annotated[Session, Depends(get_db)],
+) -> AthleteScoresResponse:
+    """
+    レーダーチャート・履歴グラフ用の詳細スコアを返す。
+
+    スコアは参考値（is_reference_score: true）。
+    """
+    profile, latest, history = scout_service.get_athlete_scores(db, athlete_id, current_user)
+    return AthleteScoresResponse(
+        id=profile.id,
+        name=profile.name,
+        position=profile.position,
+        sport=profile.sport,
+        location=profile.location,
+        height_cm=profile.height_cm,
+        weight_kg=profile.weight_kg,
+        latest=_to_snapshot(latest) if latest is not None else None,
+        history=[_to_snapshot(r) for r in reversed(history)],  # 古い順（履歴グラフ用）
+    )
