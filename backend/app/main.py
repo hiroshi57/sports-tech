@@ -9,6 +9,7 @@ from app.routers import (
     notifications,
     scouts,
     selfcare,
+    training,
     videos,
 )
 
@@ -34,6 +35,7 @@ app.include_router(scouts.router, prefix="/api/scouts", tags=["scouts"])
 app.include_router(activities.router, prefix="/api/activities", tags=["activities"])
 app.include_router(selfcare.router, prefix="/api/selfcare", tags=["selfcare"])
 app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])
+app.include_router(training.router, prefix="/api/training", tags=["training"])
 
 
 @app.get("/")
