@@ -59,6 +59,33 @@ describe("ログイン画面", () => {
     fireEvent.changeText(getByTestId("login-email-input"), ME.email);
     fireEvent.press(getByTestId("login-submit"));
 
+    // 選手はログイン後にオンボーディングが表示される
+    await waitFor(() => expect(getByTestId("onboarding")).toBeTruthy());
+    fireEvent.press(getByTestId("onboarding-skip"));
+
+    await waitFor(() => expect(getByText(`${ME.email} でログイン中`)).toBeTruthy());
+  });
+
+  it("オンボーディングを次へ進めて完了できる", async () => {
+    mockFetch({
+      "/api/auth/login": {
+        status: 200,
+        body: { access_token: "tok", token_type: "bearer" },
+      },
+      "/api/auth/me": { status: 200, body: ME },
+      "/api/videos": { status: 200, body: [] },
+    });
+
+    const { getByTestId, getByText } = render(<App />);
+    fireEvent.changeText(getByTestId("login-email-input"), ME.email);
+    fireEvent.press(getByTestId("login-submit"));
+    await waitFor(() => expect(getByTestId("onboarding")).toBeTruthy());
+
+    // 3ステップを「次へ」で進む
+    fireEvent.press(getByTestId("onboarding-next"));
+    fireEvent.press(getByTestId("onboarding-next"));
+    fireEvent.press(getByTestId("onboarding-next"));
+
     await waitFor(() => expect(getByText(`${ME.email} でログイン中`)).toBeTruthy());
   });
 
@@ -156,6 +183,8 @@ describe("ログイン後のタブ操作", () => {
     const utils = render(<App />);
     fireEvent.changeText(utils.getByTestId("login-email-input"), ME.email);
     fireEvent.press(utils.getByTestId("login-submit"));
+    await waitFor(() => expect(utils.getByTestId("onboarding")).toBeTruthy());
+    fireEvent.press(utils.getByTestId("onboarding-skip"));
     await waitFor(() => expect(utils.getByText(`${ME.email} でログイン中`)).toBeTruthy());
     return utils;
   }
