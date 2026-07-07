@@ -8,12 +8,13 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { colors } from "../utils/theme";
 
-export type TabKey = "home" | "upload" | "activity" | "profile";
+export type TabKey = "home" | "upload" | "activity" | "notifications" | "profile";
 
 const tabs: { key: TabKey; label: string; icon: string }[] = [
   { key: "home", label: "ホーム", icon: "🏠" },
   { key: "upload", label: "アップロード", icon: "🎥" },
   { key: "activity", label: "活動記録", icon: "📝" },
+  { key: "notifications", label: "通知", icon: "🔔" },
   { key: "profile", label: "プロフィール", icon: "👤" },
 ];
 

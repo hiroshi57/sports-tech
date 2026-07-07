@@ -125,6 +125,20 @@ describe("ログイン後のタブ操作", () => {
         status: 200,
         body: [],
       },
+      "/api/notifications": {
+        status: 200,
+        body: [
+          {
+            id: "n-1",
+            type: "analysis_completed",
+            title: "動画の分析が完了しました",
+            body: "ホーム画面から確認できます。",
+            resource_id: "v-1",
+            is_read: false,
+            created_at: "2026-07-03T00:00:00Z",
+          },
+        ],
+      },
       "/api/videos": {
         status: 200,
         body: [
@@ -192,5 +206,15 @@ describe("ログイン後のタブ操作", () => {
     await waitFor(() => expect(getByTestId("add-activity")).toBeTruthy());
     expect(getByTestId("type-practice")).toBeTruthy();
     expect(getByTestId("fatigue-3")).toBeTruthy();
+  });
+
+  it("通知タブで通知一覧が表示され、タップで既読になる", async () => {
+    const { getByTestId, queryByTestId } = await loginToHome();
+    fireEvent.press(getByTestId("tab-notifications"));
+    await waitFor(() => expect(getByTestId("notification-n-1")).toBeTruthy());
+    expect(getByTestId("unread-n-1")).toBeTruthy();
+
+    fireEvent.press(getByTestId("notification-n-1"));
+    await waitFor(() => expect(queryByTestId("unread-n-1")).toBeNull());
   });
 });

@@ -194,3 +194,34 @@ export function deleteActivity(activityId: string): Promise<void> {
 export function fetchActivitySummary(): Promise<ActivitySummary> {
   return request<ActivitySummary>("GET", "/api/activities/summary");
 }
+
+// ── 通知 ────────────────────────────────────────────────────────────
+
+export type NotificationType =
+  "analysis_completed" | "analysis_failed" | "scout_viewed" | "injury_risk_alert";
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string | null;
+  resource_id: string | null;
+  is_read: boolean;
+  created_at: string;
+}
+
+export function listNotifications(): Promise<Notification[]> {
+  return request<Notification[]>("GET", "/api/notifications");
+}
+
+export function fetchUnreadCount(): Promise<{ unread_count: number }> {
+  return request<{ unread_count: number }>("GET", "/api/notifications/unread-count");
+}
+
+export function markNotificationRead(id: string): Promise<Notification> {
+  return request<Notification>("POST", `/api/notifications/${id}/read`);
+}
+
+export function markAllNotificationsRead(): Promise<{ unread_count: number }> {
+  return request<{ unread_count: number }>("POST", "/api/notifications/read-all");
+}

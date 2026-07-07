@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "./src/hooks/useAuth";
 import ActivityScreen from "./src/screens/ActivityScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import LoginScreen from "./src/screens/LoginScreen";
+import NotificationScreen from "./src/screens/NotificationScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
 import ScoreScreen from "./src/screens/ScoreScreen";
 import UploadScreen from "./src/screens/UploadScreen";
@@ -31,6 +32,7 @@ function Main() {
         {tab === "home" && <HomeScreen onSelectVideo={setSelectedVideoId} />}
         {tab === "upload" && <UploadScreen />}
         {tab === "activity" && <ActivityScreen />}
+        {tab === "notifications" && <NotificationScreen />}
         {tab === "profile" && <ProfileScreen />}
       </View>
       <TabBar active={tab} onChange={setTab} />
