@@ -5,6 +5,7 @@ import { SafeAreaView, StyleSheet, View } from "react-native";
 import TabBar, { TabKey } from "./src/components/TabBar";
 import { AuthProvider, useAuth } from "./src/hooks/useAuth";
 import ActivityScreen from "./src/screens/ActivityScreen";
+import CareScreen from "./src/screens/CareScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 import NotificationScreen from "./src/screens/NotificationScreen";
@@ -39,6 +40,7 @@ function Main() {
         {tab === "home" && <HomeScreen onSelectVideo={setSelectedVideoId} />}
         {tab === "upload" && <UploadScreen />}
         {tab === "activity" && <ActivityScreen />}
+        {tab === "care" && <CareScreen />}
         {tab === "notifications" && <NotificationScreen />}
         {tab === "profile" && <ProfileScreen />}
       </View>

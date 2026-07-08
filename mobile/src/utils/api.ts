@@ -225,3 +225,52 @@ export function markNotificationRead(id: string): Promise<Notification> {
 export function markAllNotificationsRead(): Promise<{ unread_count: number }> {
   return request<{ unread_count: number }>("POST", "/api/notifications/read-all");
 }
+
+// ── セルフケア（怪我リスク）────────────────────────────────────────
+
+export interface InjuryRisk {
+  risk_score: number;
+  risk_level: "low" | "moderate" | "high";
+  factors: string[];
+  acwr: number | null;
+  is_reference_score: boolean;
+}
+
+export function fetchInjuryRisk(): Promise<InjuryRisk> {
+  return request<InjuryRisk>("GET", "/api/selfcare/injury-risk");
+}
+
+// ── 練習メニュー ────────────────────────────────────────────────────
+
+export interface Exercise {
+  name: string;
+  duration_min: number;
+  description?: string | null;
+  target_skill?: string | null;
+}
+
+export interface TrainingMenu {
+  id: string;
+  athlete_id: string;
+  title: string;
+  description: string | null;
+  is_ai_generated: boolean;
+  total_duration_min: number;
+  difficulty: string;
+  exercises: Exercise[];
+  created_at: string;
+}
+
+export function listTrainingMenus(): Promise<TrainingMenu[]> {
+  return request<TrainingMenu[]>("GET", "/api/training");
+}
+
+export function generateTrainingMenu(targetDurationMin = 60): Promise<TrainingMenu> {
+  return request<TrainingMenu>("POST", "/api/training/generate", {
+    target_duration_min: targetDurationMin,
+  });
+}
+
+export function deleteTrainingMenu(menuId: string): Promise<void> {
+  return request<void>("DELETE", `/api/training/${menuId}`);
+}

@@ -152,6 +152,53 @@ describe("ログイン後のタブ操作", () => {
         status: 200,
         body: [],
       },
+      "/api/selfcare/injury-risk": {
+        status: 200,
+        body: {
+          risk_score: 45.0,
+          risk_level: "moderate",
+          factors: ["直近の負荷が急増しています（ACWR=1.8、1.5超は要注意）"],
+          acwr: 1.8,
+          is_reference_score: true,
+        },
+      },
+      "/api/training/generate": {
+        status: 201,
+        body: {
+          id: "m-2",
+          athlete_id: "p-1",
+          title: "AIおすすめ練習メニュー",
+          description: "生成済み",
+          is_ai_generated: true,
+          total_duration_min: 50,
+          difficulty: "intermediate",
+          exercises: [],
+          created_at: "2026-07-03T00:00:00Z",
+        },
+      },
+      "/api/training": {
+        status: 200,
+        body: [
+          {
+            id: "m-1",
+            athlete_id: "p-1",
+            title: "AIおすすめ練習メニュー",
+            description: "「ボールコントロール」を重点強化",
+            is_ai_generated: true,
+            total_duration_min: 50,
+            difficulty: "intermediate",
+            exercises: [
+              {
+                name: "コーンドリブル",
+                duration_min: 15,
+                description: "細かいタッチ",
+                target_skill: "ball_control",
+              },
+            ],
+            created_at: "2026-07-03T00:00:00Z",
+          },
+        ],
+      },
       "/api/notifications": {
         status: 200,
         body: [
@@ -235,6 +282,17 @@ describe("ログイン後のタブ操作", () => {
     await waitFor(() => expect(getByTestId("add-activity")).toBeTruthy());
     expect(getByTestId("type-practice")).toBeTruthy();
     expect(getByTestId("fatigue-3")).toBeTruthy();
+  });
+
+  it("育成タブで怪我リスクと練習メニューが表示される", async () => {
+    const { getByTestId, getByText } = await loginToHome();
+    fireEvent.press(getByTestId("tab-care"));
+
+    await waitFor(() => expect(getByTestId("risk-card")).toBeTruthy());
+    expect(getByText("45")).toBeTruthy(); // リスクスコア
+    expect(getByText(/ACWR 1.8/)).toBeTruthy();
+    expect(getByTestId("menu-m-1")).toBeTruthy();
+    expect(getByText(/コーンドリブル/)).toBeTruthy();
   });
 
   it("通知タブで通知一覧が表示され、タップで既読になる", async () => {
