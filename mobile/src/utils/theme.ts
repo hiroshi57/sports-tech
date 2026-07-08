@@ -1,13 +1,14 @@
 /** アプリ共通のカラー・スタイル定数。 */
 
+// Web ダッシュボード（globals.css の Design Token）と統一したパレット
 export const colors = {
-  primary: "#1a1a2e",
-  accent: "#0f6fff",
-  background: "#f7f8fa",
+  primary: "#0b1b3f", // ブランド濃紺
+  accent: "#2563eb", // アクション青
+  background: "#f6f8fc",
   card: "#ffffff",
-  text: "#1a1a2e",
+  text: "#111827",
   textMuted: "#6b7280",
-  border: "#e5e7eb",
+  border: "#e6e9f0",
   danger: "#dc2626",
   success: "#16a34a",
   warning: "#d97706",

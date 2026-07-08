@@ -1,17 +1,7 @@
-/* ─── デザイントークン ───────────────────────────────── */
-.page {
-  --color-brand: #0a5c36;
-  --color-brand-dark: #063d24;
-  --color-accent: #f0a500;
-  --color-bg: #f8faf9;
-  --color-surface: #ffffff;
-  --color-text: #1a1a1a;
-  --color-text-muted: #5c6b63;
-  --color-border: #e2e8e4;
-  --radius-card: 12px;
-  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.06);
+/* ランディングページ — 全体デザインシステム（globals.css のトークン）に統一 */
 
-  font-family: var(--font-geist-sans, sans-serif);
+.page {
+  font-family: var(--font-sans);
   background-color: var(--color-bg);
   color: var(--color-text);
   min-height: 100vh;
@@ -24,7 +14,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 40px;
+  padding: var(--space-4) var(--space-6);
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   position: sticky;
@@ -33,19 +23,19 @@
 }
 
 .logo {
-  font-size: 20px;
+  font-size: var(--text-lg);
   font-weight: 700;
-  color: var(--color-brand);
+  color: var(--color-primary);
   letter-spacing: -0.5px;
 }
 
 .nav {
   display: flex;
-  gap: 24px;
+  gap: var(--space-5);
 }
 
 .navLink {
-  font-size: 14px;
+  font-size: var(--text-sm);
   color: var(--color-text-muted);
   text-decoration: none;
   font-weight: 500;
@@ -53,7 +43,7 @@
 }
 
 .navLink:hover {
-  color: var(--color-brand);
+  color: var(--color-accent);
 }
 
 /* ─── メインコンテンツ ─────────────────────────────── */
@@ -62,13 +52,13 @@
   max-width: 960px;
   width: 100%;
   margin: 0 auto;
-  padding: 0 40px 80px;
+  padding: 0 var(--space-6) var(--space-8);
 }
 
 /* ─── ヒーローセクション ──────────────────────────── */
 .hero {
   text-align: center;
-  padding: 96px 0 72px;
+  padding: var(--space-8) 0 var(--space-7);
 }
 
 .heroTitle {
@@ -76,22 +66,22 @@
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: -2px;
-  color: var(--color-brand-dark);
-  margin-bottom: 20px;
+  color: var(--color-primary);
+  margin-bottom: var(--space-5);
 }
 
 .heroSubtitle {
-  font-size: 18px;
+  font-size: var(--text-lg);
   line-height: 1.8;
   color: var(--color-text-muted);
   max-width: 560px;
-  margin: 0 auto 40px;
+  margin: 0 auto var(--space-6);
 }
 
 .ctas {
   display: flex;
   justify-content: center;
-  gap: 16px;
+  gap: var(--space-4);
   flex-wrap: wrap;
 }
 
@@ -99,85 +89,96 @@
   display: inline-flex;
   align-items: center;
   padding: 12px 28px;
-  border-radius: 8px;
-  background: var(--color-brand);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
   color: #fff;
   font-weight: 600;
-  font-size: 15px;
+  font-size: var(--text-base);
   text-decoration: none;
-  transition: background 0.15s;
+  transition:
+    background 0.15s,
+    transform 0.05s;
 }
 
 .primary:hover {
-  background: var(--color-brand-dark);
+  background: var(--color-accent-600);
+}
+
+.primary:active {
+  transform: translateY(1px);
 }
 
 .secondary {
   display: inline-flex;
   align-items: center;
   padding: 12px 28px;
-  border-radius: 8px;
-  border: 2px solid var(--color-brand);
-  color: var(--color-brand);
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-accent);
+  color: var(--color-accent);
   font-weight: 600;
-  font-size: 15px;
+  font-size: var(--text-base);
   text-decoration: none;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .secondary:hover {
-  background: var(--color-brand);
+  background: var(--color-accent);
   color: #fff;
 }
 
 /* ─── 機能グリッド ────────────────────────────────── */
 .features {
-  padding: 16px 0 40px;
+  padding: var(--space-4) 0 var(--space-6);
 }
 
 .sectionTitle {
-  font-size: 28px;
+  font-size: var(--text-2xl);
   font-weight: 700;
-  color: var(--color-text);
+  color: var(--color-primary);
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: var(--space-6);
   letter-spacing: -0.5px;
 }
 
 .featureGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
+  gap: var(--space-5);
 }
 
 .featureCard {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-card);
-  padding: 32px 28px;
-  box-shadow: var(--shadow-card);
-  transition: box-shadow 0.15s;
+  border-radius: var(--radius-md);
+  padding: var(--space-6) var(--space-5);
+  box-shadow: var(--shadow-sm);
+  transition:
+    box-shadow 0.15s,
+    transform 0.1s;
 }
 
 .featureCard:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .featureIcon {
   font-size: 36px;
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .featureTitle {
-  font-size: 18px;
+  font-size: var(--text-lg);
   font-weight: 700;
-  color: var(--color-brand-dark);
-  margin-bottom: 8px;
+  color: var(--color-primary);
+  margin-bottom: var(--space-2);
 }
 
 .featureDescription {
-  font-size: 14px;
+  font-size: var(--text-sm);
   line-height: 1.7;
   color: var(--color-text-muted);
 }
@@ -185,40 +186,40 @@
 /* ─── 免責事項 ────────────────────────────────────── */
 .disclaimer {
   text-align: center;
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--color-text-muted);
-  margin-top: 16px;
-  padding: 16px;
+  margin-top: var(--space-4);
+  padding: var(--space-4);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: #fffbf0;
+  border-radius: var(--radius-sm);
+  background: var(--color-warning-bg);
 }
 
 /* ─── フッター ────────────────────────────────────── */
 .footer {
   text-align: center;
-  padding: 24px 40px;
+  padding: var(--space-5) var(--space-6);
   border-top: 1px solid var(--color-border);
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text-muted);
 }
 
 /* ─── レスポンシブ ────────────────────────────────── */
 @media (max-width: 640px) {
   .header {
-    padding: 12px 20px;
+    padding: var(--space-3) var(--space-5);
   }
 
   .nav {
-    gap: 16px;
+    gap: var(--space-4);
   }
 
   .main {
-    padding: 0 20px 60px;
+    padding: 0 var(--space-5) var(--space-7);
   }
 
   .hero {
-    padding: 60px 0 48px;
+    padding: var(--space-7) 0 var(--space-6);
   }
 
   .heroTitle {
@@ -226,27 +227,10 @@
   }
 
   .heroSubtitle {
-    font-size: 16px;
+    font-size: var(--text-base);
   }
 
   .featureGrid {
     grid-template-columns: 1fr;
-  }
-}
-
-/* ─── ダークモード ────────────────────────────────── */
-@media (prefers-color-scheme: dark) {
-  .page {
-    --color-bg: #0d1117;
-    --color-surface: #161b22;
-    --color-text: #e6edf3;
-    --color-text-muted: #8b949e;
-    --color-border: #30363d;
-    --color-brand: #3fb950;
-    --color-brand-dark: #2ea043;
-  }
-
-  .disclaimer {
-    background: #1a1500;
   }
 }
