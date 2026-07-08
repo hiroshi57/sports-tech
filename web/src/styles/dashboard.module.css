@@ -1,75 +1,154 @@
+/* スカウトダッシュボード — Design Token ベースの統一スタイル */
+
 .page {
   min-height: 100vh;
-  background: #f7f8fa;
-  color: #1a1a2e;
-  font-family:
-    system-ui,
-    -apple-system,
-    sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
+/* ── ヘッダー ── */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 32px;
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
+  padding: var(--space-4) var(--space-6);
+  background: var(--color-primary);
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .brand {
-  font-size: 20px;
+  font-size: var(--text-lg);
   font-weight: 700;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.brandMark {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
 }
 
 .container {
-  max-width: 1080px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 32px;
+  padding: var(--space-6);
 }
 
-.heading {
-  font-size: 24px;
+/* ── ページ見出し ── */
+.pageTitle {
+  font-size: var(--text-2xl);
   font-weight: 700;
-  margin-bottom: 24px;
+  color: var(--color-primary);
+  margin-bottom: var(--space-1);
 }
 
+.pageLead {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-5);
+}
+
+/* ── 統計カード（KPI） ── */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.statCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  box-shadow: var(--shadow-sm);
+}
+
+.statValue {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.statLabel {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+}
+
+/* ── フィルターバー ── */
 .filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: var(--space-3);
   align-items: flex-end;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-5);
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .label {
-  font-size: 12px;
-  color: #6b7280;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-weight: 600;
 }
 
 .input {
-  padding: 8px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 14px;
-  background: #fff;
+  padding: 10px var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  transition: border-color 0.15s;
 }
 
+.input:focus {
+  border-color: var(--color-accent);
+  outline: none;
+}
+
+/* ── ボタン（UI状態: hover/active/disabled） ── */
 .button {
-  padding: 10px 20px;
-  background: #0f6fff;
+  padding: 11px var(--space-5);
+  background: var(--color-accent);
   color: #fff;
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
+  transition:
+    background 0.15s,
+    transform 0.05s;
+}
+
+.button:hover {
+  background: var(--color-accent-600);
+}
+
+.button:active {
+  transform: translateY(1px);
 }
 
 .button:disabled {
@@ -77,112 +156,229 @@
   cursor: default;
 }
 
+/* ── 選手カードグリッド ── */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-4);
 }
 
 .card {
-  display: block;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
   text-decoration: none;
   color: inherit;
-  transition: box-shadow 0.15s;
+  box-shadow: var(--shadow-sm);
+  transition:
+    box-shadow 0.15s,
+    transform 0.1s,
+    border-color 0.15s;
 }
 
 .card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--color-accent);
+}
+
+.cardBody {
+  flex: 1;
+  min-width: 0;
 }
 
 .cardName {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: 700;
 }
 
 .cardMeta {
-  font-size: 13px;
-  color: #6b7280;
-  margin-top: 4px;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
 }
 
-.score {
-  margin-top: 12px;
-  font-size: 28px;
+/* ── スコアリング（円形ゲージ） ── */
+.ring {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+}
+
+.ringValue {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-base);
   font-weight: 700;
-  color: #0f6fff;
+  color: var(--color-primary);
 }
 
-.scoreLabel {
-  font-size: 11px;
-  color: #6b7280;
+.ringEmpty {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  border: 2px dashed var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--color-text-subtle);
+  text-align: center;
+  flex-shrink: 0;
 }
 
+/* ── 状態表示 ── */
 .empty,
 .error,
 .loading {
   text-align: center;
-  color: #6b7280;
-  margin-top: 48px;
+  color: var(--color-text-muted);
+  margin-top: var(--space-7);
 }
 
 .error {
-  color: #dc2626;
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-4);
 }
 
 .disclaimer {
-  font-size: 12px;
-  color: #6b7280;
-  margin-top: 32px;
-  line-height: 1.6;
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+  margin-top: var(--space-6);
+  line-height: 1.7;
+}
+
+/* ── 詳細ページ ── */
+.detailHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-6);
+}
+
+.detailName {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.detailMeta {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+}
+
+.bigRing {
+  width: 96px;
+  height: 96px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.bigRingValue {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+}
+
+.bigRingNum {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.bigRingLabel {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.section {
+  margin-top: var(--space-6);
+}
+
+.subheading {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: var(--space-3);
+}
+
+.chartWrap {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── ログイン ── */
+.loginWrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  background: linear-gradient(160deg, var(--color-primary), var(--color-primary-700));
 }
 
 .loginBox {
-  max-width: 380px;
-  margin: 80px auto;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 32px;
+  width: 100%;
+  max-width: 400px;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-7) var(--space-6);
+  box-shadow: var(--shadow-lg);
 }
 
 .loginTitle {
-  font-size: 22px;
+  font-size: var(--text-xl);
   font-weight: 700;
+  color: var(--color-primary);
   text-align: center;
-  margin-bottom: 24px;
+}
+
+.loginLead {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+  margin: var(--space-2) 0 var(--space-6);
 }
 
 .fullWidth {
   width: 100%;
-  margin-top: 16px;
+  margin-top: var(--space-4);
 }
 
 .link {
-  color: #0f6fff;
-  text-decoration: none;
-  font-size: 14px;
+  color: #fff;
+  font-size: var(--text-sm);
+  opacity: 0.9;
 }
 
-.section {
-  margin-top: 32px;
-}
-
-.subheading {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 12px;
-}
-
-.chartWrap {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 16px;
-  display: flex;
-  justify-content: center;
-  overflow-x: auto;
+.link:hover {
+  opacity: 1;
 }

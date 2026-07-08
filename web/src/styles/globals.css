@@ -1,13 +1,69 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/**
+ * デザインシステム / Design Token
+ *
+ * 参考記事「AIでおしゃれな画面を作るためのデザインシステムを学ぼう」の指針に基づき、
+ * カラー役割・余白スケール・角丸・影・タイポグラフィをトークン化して統一する。
+ *
+ * トーン&マナー: 信頼感・スポーティ・クリーン（濃紺 × 鮮やかなブルー、余白広め）
+ */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  /* ── カラー役割 ── */
+  --color-primary: #0b1b3f; /* ブランド濃紺（見出し・ヘッダー） */
+  --color-primary-700: #16264f;
+  --color-accent: #2563eb; /* アクション・強調 */
+  --color-accent-600: #1d4ed8;
+  --color-accent-050: #eff4ff;
+
+  /* ベース（背景・面・境界・文字） */
+  --color-bg: #f6f8fc;
+  --color-surface: #ffffff;
+  --color-surface-2: #f9fafb;
+  --color-border: #e6e9f0;
+  --color-text: #111827;
+  --color-text-muted: #6b7280;
+  --color-text-subtle: #9ca3af;
+
+  /* セマンティック */
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+  --color-success-bg: #ecfdf3;
+  --color-warning-bg: #fffbeb;
+  --color-danger-bg: #fef2f2;
+
+  /* ── 余白スケール（4の倍数） ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* ── 角丸 ── */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+
+  /* ── 影（エレベーション） ── */
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08);
+  --shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.12);
+
+  /* ── タイポグラフィ ── */
+  --font-sans:
+    "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto,
+    sans-serif;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 28px;
+  --text-3xl: 36px;
 }
 
 html,
@@ -17,9 +73,10 @@ body {
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--color-text);
+  background: var(--color-bg);
+  font-family: var(--font-sans);
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -35,8 +92,9 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+/* ── アクセシビリティ: キーボードフォーカスを明示 ── */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }

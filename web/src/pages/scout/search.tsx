@@ -1,8 +1,9 @@
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
+import ScoreRing from "@/components/ScoreRing";
 import {
   ApiError,
   type AthleteSearchItem,
@@ -42,7 +43,6 @@ export default function ScoutSearchPage() {
       void router.replace("/auth/login");
       return;
     }
-    // 同期 setState を避けるためマイクロタスクで実行
     void Promise.resolve().then(() => runSearch({}));
   }, [router, runSearch]);
 
@@ -51,6 +51,22 @@ export default function ScoutSearchPage() {
     void router.push("/auth/login");
   };
 
+  // KPI 集計
+  const stats = useMemo(() => {
+    const scored = athletes.filter((a) => a.latest_total_score != null);
+    const avg = scored.length
+      ? Math.round(scored.reduce((s, a) => s + (a.latest_total_score ?? 0), 0) / scored.length)
+      : null;
+    const top = scored.reduce<number | null>(
+      (m, a) =>
+        a.latest_total_score != null && (m == null || a.latest_total_score > m)
+          ? a.latest_total_score
+          : m,
+      null
+    );
+    return { total: athletes.length, scored: scored.length, avg, top };
+  }, [athletes]);
+
   return (
     <>
       <Head>
@@ -58,14 +74,40 @@ export default function ScoutSearchPage() {
       </Head>
       <div className={styles.page}>
         <header className={styles.header}>
-          <span className={styles.brand}>sports-tech スカウト</span>
+          <span className={styles.brand}>
+            <span className={styles.brandMark}>⚽</span>
+            sports-tech スカウト
+          </span>
           <button className={styles.link} onClick={handleLogout}>
             ログアウト
           </button>
         </header>
 
         <div className={styles.container}>
-          <h1 className={styles.heading}>選手を探す</h1>
+          <h1 className={styles.pageTitle}>選手を探す</h1>
+          <p className={styles.pageLead}>
+            公開設定された選手を条件で絞り込み、AI 参考スコアから有望株を発見できます。
+          </p>
+
+          {/* KPI 統計 */}
+          <div className={styles.stats}>
+            <div className={styles.statCard}>
+              <div className={styles.statValue}>{stats.total}</div>
+              <div className={styles.statLabel}>該当選手</div>
+            </div>
+            <div className={styles.statCard}>
+              <div className={styles.statValue}>{stats.scored}</div>
+              <div className={styles.statLabel}>分析済み</div>
+            </div>
+            <div className={styles.statCard}>
+              <div className={styles.statValue}>{stats.avg ?? "—"}</div>
+              <div className={styles.statLabel}>平均総合スコア</div>
+            </div>
+            <div className={styles.statCard}>
+              <div className={styles.statValue}>{stats.top ?? "—"}</div>
+              <div className={styles.statLabel}>最高総合スコア</div>
+            </div>
+          </div>
 
           <form
             className={styles.filters}
@@ -128,18 +170,20 @@ export default function ScoutSearchPage() {
           <div className={styles.grid}>
             {athletes.map((a) => (
               <Link key={a.id} href={`/scout/athletes/${a.id}`} className={styles.card}>
-                <div className={styles.cardName}>{a.name}</div>
-                <div className={styles.cardMeta}>
-                  {[a.position, a.sport, a.location].filter(Boolean).join(" ・ ")}
-                </div>
                 {a.latest_total_score != null ? (
-                  <>
-                    <div className={styles.score}>{a.latest_total_score}</div>
-                    <div className={styles.scoreLabel}>総合スコア（参考値）</div>
-                  </>
+                  <div className={styles.ring}>
+                    <ScoreRing value={a.latest_total_score} />
+                    <span className={styles.ringValue}>{a.latest_total_score}</span>
+                  </div>
                 ) : (
-                  <div className={styles.cardMeta}>分析データなし</div>
+                  <div className={styles.ringEmpty}>分析なし</div>
                 )}
+                <div className={styles.cardBody}>
+                  <div className={styles.cardName}>{a.name}</div>
+                  <div className={styles.cardMeta}>
+                    {[a.position, a.sport, a.location].filter(Boolean).join(" ・ ")}
+                  </div>
+                </div>
               </Link>
             ))}
           </div>

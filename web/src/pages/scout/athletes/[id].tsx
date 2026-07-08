@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import RadarChart, { type RadarAxis } from "@/components/RadarChart";
 import ScoreHistoryChart from "@/components/ScoreHistoryChart";
+import ScoreRing from "@/components/ScoreRing";
 import { ApiError, type AthleteScores, getAthleteScores, getToken } from "@/lib/api";
 import styles from "@/styles/dashboard.module.css";
 
@@ -58,7 +59,10 @@ export default function AthleteDetailPage() {
       </Head>
       <div className={styles.page}>
         <header className={styles.header}>
-          <span className={styles.brand}>sports-tech スカウト</span>
+          <span className={styles.brand}>
+            <span className={styles.brandMark}>⚽</span>
+            sports-tech スカウト
+          </span>
           <Link className={styles.link} href="/scout/search">
             ← 検索に戻る
           </Link>
@@ -70,24 +74,38 @@ export default function AthleteDetailPage() {
 
           {data ? (
             <>
-              <h1 className={styles.heading}>{data.name}</h1>
-              <p className={styles.cardMeta}>
-                {[data.position, data.sport, data.location].filter(Boolean).join(" ・ ")}
-              </p>
-              <p className={styles.cardMeta}>
-                {[
-                  data.height_cm ? `身長 ${data.height_cm}cm` : null,
-                  data.weight_kg ? `体重 ${data.weight_kg}kg` : null,
-                ]
-                  .filter(Boolean)
-                  .join(" ・ ") || "身体データ未登録"}
-              </p>
+              <div className={styles.detailHead}>
+                {data.latest ? (
+                  <div className={styles.bigRing}>
+                    <ScoreRing value={data.latest.total_score} size={96} stroke={7} />
+                    <div className={styles.bigRingValue}>
+                      <span className={styles.bigRingNum}>{data.latest.total_score}</span>
+                      <span className={styles.bigRingLabel}>参考値</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className={styles.ringEmpty} style={{ width: 96, height: 96 }}>
+                    分析なし
+                  </div>
+                )}
+                <div>
+                  <h1 className={styles.detailName}>{data.name}</h1>
+                  <p className={styles.detailMeta}>
+                    {[data.position, data.sport, data.location].filter(Boolean).join(" ・ ")}
+                  </p>
+                  <p className={styles.detailMeta}>
+                    {[
+                      data.height_cm ? `身長 ${data.height_cm}cm` : null,
+                      data.weight_kg ? `体重 ${data.weight_kg}kg` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" ・ ") || "身体データ未登録"}
+                  </p>
+                </div>
+              </div>
 
               {data.latest ? (
                 <>
-                  <div className={styles.score}>{data.latest.total_score}</div>
-                  <div className={styles.scoreLabel}>総合スコア（参考値）</div>
-
                   <section className={styles.section}>
                     <h2 className={styles.subheading}>能力バランス</h2>
                     <div className={styles.chartWrap}>
@@ -103,7 +121,7 @@ export default function AthleteDetailPage() {
                   </section>
                 </>
               ) : (
-                <p className={styles.cardMeta}>分析データがまだありません。</p>
+                <p className={styles.empty}>分析データがまだありません。</p>
               )}
 
               <p className={styles.disclaimer}>

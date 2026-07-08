@@ -38,9 +38,10 @@ export default function LoginPage() {
       <Head>
         <title>ログイン | sports-tech スカウト</title>
       </Head>
-      <div className={styles.page}>
+      <div className={styles.loginWrap}>
         <div className={styles.loginBox}>
           <h1 className={styles.loginTitle}>スカウトログイン</h1>
+          <p className={styles.loginLead}>有望な選手を、AI 分析スコアから見つけましょう。</p>
           <form onSubmit={handleSubmit}>
             <div className={styles.field}>
               <label className={styles.label} htmlFor="email">
