@@ -64,6 +64,15 @@
   --text-xl: 22px;
   --text-2xl: 28px;
   --text-3xl: 36px;
+
+  /* ── ブレークポイント（レスポンシブ統一基準） ──
+   * CSS Modules の @media 条件には変数を使えないため、
+   * 全スタイルシートで以下のリテラル値に統一する:
+   *   sm(モバイル): max-width 640px
+   *   md(タブレット): max-width 1024px
+   * 参考として変数も定義（JS/インライン用）。 */
+  --bp-sm: 640px;
+  --bp-md: 1024px;
 }
 
 html,

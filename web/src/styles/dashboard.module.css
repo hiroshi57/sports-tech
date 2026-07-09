@@ -382,3 +382,44 @@
 .link:hover {
   opacity: 1;
 }
+
+/* ── レスポンシブ（統一ブレークポイント: md=1024px / sm=640px） ── */
+@media (max-width: 1024px) {
+  .container {
+    padding: var(--space-5);
+  }
+}
+
+@media (max-width: 640px) {
+  .header {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .container {
+    padding: var(--space-4);
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filters .button {
+    width: 100%;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detailHead {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    padding: var(--space-5);
+  }
+}
