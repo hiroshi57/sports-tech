@@ -547,6 +547,151 @@
   color: var(--color-text);
 }
 
+/* ── 多面評価カテゴリ ── */
+.catGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+.catCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  box-shadow: var(--shadow-sm);
+}
+
+.catTitle {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-accent);
+  margin-bottom: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid var(--color-accent-050);
+}
+
+.abilityRow {
+  padding: var(--space-2) 0;
+}
+
+.abilityHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.abilityName {
+  font-size: var(--text-sm);
+  color: var(--color-text);
+}
+
+.abilityVal {
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.abilityNote {
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+  margin-top: 2px;
+}
+
+/* 汎用カード群（食事/予測/健康/海外） */
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-4);
+}
+
+.infoCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+}
+
+.infoTitle {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.infoStat {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: var(--text-sm);
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.infoStat:last-of-type {
+  border-bottom: none;
+}
+
+.infoStatVal {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.infoNote {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-2);
+  line-height: 1.7;
+}
+
+.factorList {
+  list-style: none;
+  margin-top: var(--space-2);
+}
+
+.factorList li {
+  font-size: var(--text-xs);
+  color: var(--color-text);
+  padding: 4px 0 4px 16px;
+  position: relative;
+  line-height: 1.6;
+}
+
+.factorList li::before {
+  content: "▸";
+  position: absolute;
+  left: 0;
+  color: var(--color-accent);
+}
+
+/* 身体推移テーブル */
+.histTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.histTable th,
+.histTable td {
+  padding: 8px 10px;
+  text-align: right;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.histTable th:first-child,
+.histTable td:first-child {
+  text-align: left;
+}
+
+.histTable thead th {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
 /* ── レスポンシブ（統一ブレークポイント: md=1024px / sm=640px） ── */
 @media (max-width: 1024px) {
   .container {

@@ -284,11 +284,194 @@ export default function AthleteDetailPage() {
                     </div>
                   </section>
 
+                  {/* ── 多面評価（技術/フィジカル/メンタル/健康） ── */}
+                  {data.abilities && data.abilities.length > 0 ? (
+                    <section className={styles.section}>
+                      <h2 className={styles.subheading}>詳細能力評価（14項目）</h2>
+                      <div className={styles.catGrid}>
+                        {(["技術", "フィジカル", "メンタル", "健康"] as const).map((cat) => {
+                          const items = data.abilities!.filter((x) => x.category === cat);
+                          if (items.length === 0) return null;
+                          return (
+                            <div key={cat} className={styles.catCard}>
+                              <div className={styles.catTitle}>{cat}</div>
+                              {items.map((ab) => {
+                                const r = ratingLabel(ab.value);
+                                return (
+                                  <div key={ab.name} className={styles.abilityRow}>
+                                    <div className={styles.abilityHead}>
+                                      <span className={styles.abilityName}>{ab.name}</span>
+                                      <span
+                                        className={styles.abilityVal}
+                                        style={{ color: r.color }}
+                                      >
+                                        {ab.value}
+                                      </span>
+                                    </div>
+                                    <div className={styles.metricBarTrack}>
+                                      <div
+                                        className={styles.metricBarFill}
+                                        style={{
+                                          width: `${Math.min(100, ab.value)}%`,
+                                          background: r.color,
+                                        }}
+                                      />
+                                      {ab.avg != null ? (
+                                        <div
+                                          className={styles.metricAvgMark}
+                                          style={{ left: `${Math.min(100, ab.avg)}%` }}
+                                          title={`平均 ${ab.avg}`}
+                                        />
+                                      ) : null}
+                                    </div>
+                                    {ab.note ? (
+                                      <div className={styles.abilityNote}>{ab.note}</div>
+                                    ) : null}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ) : null}
+
                   {/* ── 能力バランス ── */}
                   <section className={styles.section}>
                     <h2 className={styles.subheading}>能力バランス</h2>
                     <div className={styles.chartWrap}>
                       <RadarChart axes={axes} />
+                    </div>
+                  </section>
+
+                  {/* ── フィジカル推移・食事・予測・健康・海外適性 ── */}
+                  <section className={styles.section}>
+                    <h2 className={styles.subheading}>フィジカル推移・コンディション・将来予測</h2>
+                    <div className={styles.infoGrid}>
+                      {/* 身体データ推移 */}
+                      {data.physical_history && data.physical_history.length > 0 ? (
+                        <div className={styles.infoCard} style={{ gridColumn: "1 / -1" }}>
+                          <div className={styles.infoTitle}>📏 身体データの推移</div>
+                          <table className={styles.histTable}>
+                            <thead>
+                              <tr>
+                                <th>時期</th>
+                                <th>身長(cm)</th>
+                                <th>体重(kg)</th>
+                                <th>体脂肪(%)</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {data.physical_history.map((p) => (
+                                <tr key={p.date}>
+                                  <td>{p.date}</td>
+                                  <td>{p.height_cm}</td>
+                                  <td>{p.weight_kg}</td>
+                                  <td>{p.body_fat_pct}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : null}
+
+                      {/* 食事・栄養 */}
+                      {data.nutrition ? (
+                        <div className={styles.infoCard}>
+                          <div className={styles.infoTitle}>🍽 食事・栄養</div>
+                          <div className={styles.infoStat}>
+                            <span>平均摂取カロリー</span>
+                            <span className={styles.infoStatVal}>
+                              {data.nutrition.avg_calories} kcal
+                            </span>
+                          </div>
+                          <div className={styles.infoStat}>
+                            <span>たんぱく質</span>
+                            <span className={styles.infoStatVal}>
+                              {data.nutrition.protein_g} g/日
+                            </span>
+                          </div>
+                          <div className={styles.infoStat}>
+                            <span>食事充足度</span>
+                            <span className={styles.infoStatVal}>
+                              {data.nutrition.adequacy} / 100
+                            </span>
+                          </div>
+                          <div className={styles.infoNote}>{data.nutrition.note}</div>
+                        </div>
+                      ) : null}
+
+                      {/* 将来予測 */}
+                      {data.prediction ? (
+                        <div className={styles.infoCard}>
+                          <div className={styles.infoTitle}>
+                            📈 将来予測（{data.prediction.horizon}）
+                          </div>
+                          <div className={styles.infoStat}>
+                            <span>予測総合スコア</span>
+                            <span className={styles.infoStatVal}>
+                              {data.prediction.projected_total}
+                            </span>
+                          </div>
+                          <div className={styles.infoStat}>
+                            <span>予測身長 / 体重</span>
+                            <span className={styles.infoStatVal}>
+                              {data.prediction.projected_height_cm}cm /{" "}
+                              {data.prediction.projected_weight_kg}kg
+                            </span>
+                          </div>
+                          <div className={styles.infoStat}>
+                            <span>ポテンシャル（伸びしろ）</span>
+                            <span className={styles.infoStatVal}>
+                              {data.prediction.potential} / 100
+                            </span>
+                          </div>
+                          <div className={styles.infoNote}>{data.prediction.comment}</div>
+                        </div>
+                      ) : null}
+
+                      {/* 健康・可用性 */}
+                      {data.health ? (
+                        <div className={styles.infoCard}>
+                          <div className={styles.infoTitle}>🩺 健康・可用性</div>
+                          <div className={styles.infoStat}>
+                            <span>怪我リスク</span>
+                            <span
+                              className={styles.infoStatVal}
+                              style={{
+                                color:
+                                  data.health.injury_risk >= 45
+                                    ? "var(--color-danger)"
+                                    : "var(--color-success)",
+                              }}
+                            >
+                              {data.health.injury_risk} / 100
+                            </span>
+                          </div>
+                          <div className={styles.infoStat}>
+                            <span>稼働可能率</span>
+                            <span className={styles.infoStatVal}>
+                              {data.health.availability_pct}%
+                            </span>
+                          </div>
+                          <div className={styles.infoNote}>{data.health.note}</div>
+                        </div>
+                      ) : null}
+
+                      {/* 海外適性 */}
+                      {data.overseas ? (
+                        <div className={styles.infoCard}>
+                          <div className={styles.infoTitle}>
+                            🌏 海外適性 {data.overseas.score}/100
+                          </div>
+                          <ul className={styles.factorList}>
+                            {data.overseas.factors.map((f, i) => (
+                              <li key={i}>{f}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
                     </div>
                   </section>
 

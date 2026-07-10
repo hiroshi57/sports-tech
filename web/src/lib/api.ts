@@ -158,12 +158,61 @@ export interface MetricBenchmark {
   sample_size: number;
 }
 
+/** 詳細能力（多面評価） */
+export interface Ability {
+  category: "技術" | "フィジカル" | "メンタル" | "健康";
+  name: string;
+  value: number; // 0-100
+  avg?: number; // 同ポジション平均（比較可能な項目のみ）
+  note?: string;
+}
+
+/** 身体データの時系列 1 点 */
+export interface PhysicalPoint {
+  date: string; // YYYY-MM
+  height_cm: number;
+  weight_kg: number;
+  body_fat_pct: number;
+}
+
+/** 栄養・食事データ */
+export interface Nutrition {
+  avg_calories: number;
+  protein_g: number;
+  adequacy: number; // 食事の充足度 0-100
+  note: string;
+}
+
+/** 将来予測 */
+export interface Prediction {
+  horizon: string; // 例: "12ヶ月後"
+  projected_total: number;
+  projected_height_cm: number;
+  projected_weight_kg: number;
+  potential: number; // 伸びしろ 0-100
+  comment: string;
+}
+
+/** 健康・可用性 */
+export interface Health {
+  injury_risk: number; // 0-100（高いほど危険）
+  availability_pct: number; // 稼働可能率
+  note: string;
+}
+
+/** 海外適性 */
+export interface OverseasReadiness {
+  score: number; // 0-100
+  factors: string[];
+}
+
 export interface AthleteScores {
   id: string;
   name: string;
   position: string | null;
   sport: string;
   location: string | null;
+  age?: number | null;
   height_cm: number | null;
   weight_kg: number | null;
   latest: ScoreSnapshot | null;
@@ -172,6 +221,13 @@ export interface AthleteScores {
   percentile: number | null;
   consistency: number | null;
   bmi: number | null;
+  // ── 拡張アナリティクス（demo/将来のbackend） ──
+  abilities?: Ability[];
+  physical_history?: PhysicalPoint[];
+  nutrition?: Nutrition | null;
+  prediction?: Prediction | null;
+  health?: Health | null;
+  overseas?: OverseasReadiness | null;
   is_reference_score: boolean;
 }
 
