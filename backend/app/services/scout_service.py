@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import statistics
 import uuid
 from dataclasses import dataclass
 from datetime import date
@@ -172,3 +173,87 @@ def get_athlete_scores(
     )
     latest = rows[0] if rows else None
     return profile, latest, rows
+
+
+@dataclass(frozen=True)
+class Benchmark:
+    sprint_score: float
+    ball_control_score: float
+    positioning_score: float
+    body_usage_score: float
+    total_score: float
+    sample_size: int
+
+
+@dataclass(frozen=True)
+class AthleteAnalytics:
+    benchmark: Benchmark | None
+    percentile: float | None
+    consistency: float | None
+    bmi: float | None
+
+
+def _peers_latest(db: Session, position: str | None) -> list[AnalysisResult]:
+    """同ポジションの公開選手それぞれの最新分析を集める（本人含む）。"""
+    stmt = select(AthleteProfile.id).where(AthleteProfile.is_public.is_(True))
+    if position:
+        stmt = stmt.where(AthleteProfile.position == position)
+    peer_ids = [row[0] for row in db.execute(stmt).all()]
+
+    results: list[AnalysisResult] = []
+    for pid in peer_ids:
+        r = db.execute(
+            select(AnalysisResult)
+            .join(Video, AnalysisResult.video_id == Video.id)
+            .where(Video.athlete_id == pid)
+            .where(Video.status == VideoStatus.COMPLETED)
+            .order_by(AnalysisResult.created_at.desc())
+            .limit(1)
+        ).scalar_one_or_none()
+        if r is not None:
+            results.append(r)
+    return results
+
+
+def compute_analytics(
+    db: Session,
+    profile: AthleteProfile,
+    latest: AnalysisResult | None,
+    history: list[AnalysisResult],
+) -> AthleteAnalytics:
+    """ベンチマーク・パーセンタイル・安定性・BMI を算出する。"""
+    # BMI
+    bmi: float | None = None
+    if profile.height_cm and profile.weight_kg:
+        h = profile.height_cm / 100.0
+        bmi = round(profile.weight_kg / (h * h), 1)
+
+    if latest is None:
+        return AthleteAnalytics(benchmark=None, percentile=None, consistency=None, bmi=bmi)
+
+    peers = _peers_latest(db, profile.position)
+    benchmark: Benchmark | None = None
+    percentile: float | None = None
+    if peers:
+        benchmark = Benchmark(
+            sprint_score=round(statistics.mean(p.sprint_score for p in peers), 1),
+            ball_control_score=round(statistics.mean(p.ball_control_score for p in peers), 1),
+            positioning_score=round(statistics.mean(p.positioning_score for p in peers), 1),
+            body_usage_score=round(statistics.mean(p.body_usage_score for p in peers), 1),
+            total_score=round(statistics.mean(p.total_score for p in peers), 1),
+            sample_size=len(peers),
+        )
+        # パーセンタイル（自分以下の割合）
+        below = sum(1 for p in peers if p.total_score <= latest.total_score)
+        percentile = round(below / len(peers) * 100, 0)
+
+    # 安定性: 総合スコアの標準偏差を 0-100 に変換（小さいほど安定=高スコア）
+    consistency: float | None = None
+    totals = [h.total_score for h in history]
+    if len(totals) >= 2:
+        sd = statistics.pstdev(totals)
+        consistency = round(max(0.0, 100.0 - sd * 5), 1)  # sd 20 で 0 点
+
+    return AthleteAnalytics(
+        benchmark=benchmark, percentile=percentile, consistency=consistency, bmi=bmi
+    )

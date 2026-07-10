@@ -1,13 +1,30 @@
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import RadarChart, { type RadarAxis } from "@/components/RadarChart";
 import ScoreHistoryChart from "@/components/ScoreHistoryChart";
 import ScoreRing from "@/components/ScoreRing";
 import { ApiError, type AthleteScores, getAthleteScores, getToken } from "@/lib/api";
 import styles from "@/styles/dashboard.module.css";
+
+const METRICS = [
+  { key: "sprint_score", label: "スプリント" },
+  { key: "ball_control_score", label: "ボールコントロール" },
+  { key: "positioning_score", label: "ポジショニング" },
+  { key: "body_usage_score", label: "身体の使い方" },
+] as const;
+
+type MetricKey = (typeof METRICS)[number]["key"];
+
+function ratingLabel(v: number): { text: string; color: string } {
+  if (v >= 85) return { text: "S 非常に優秀", color: "var(--color-success)" };
+  if (v >= 75) return { text: "A 優秀", color: "var(--color-success)" };
+  if (v >= 60) return { text: "B 平均以上", color: "var(--color-accent)" };
+  if (v >= 45) return { text: "C 平均的", color: "var(--color-warning)" };
+  return { text: "D 要改善", color: "var(--color-danger)" };
+}
 
 export default function AthleteDetailPage() {
   const router = useRouter();
@@ -44,18 +61,29 @@ export default function AthleteDetailPage() {
   }, [id, router, load]);
 
   const axes: RadarAxis[] = data?.latest
-    ? [
-        { label: "スプリント", value: data.latest.sprint_score },
-        { label: "ボール", value: data.latest.ball_control_score },
-        { label: "ポジ", value: data.latest.positioning_score },
-        { label: "身体", value: data.latest.body_usage_score },
-      ]
+    ? METRICS.map((m) => ({ label: m.label.slice(0, 4), value: data.latest![m.key] }))
     : [];
+
+  // 強み・課題の自動抽出
+  const insights = useMemo(() => {
+    if (!data?.latest) return null;
+    const scored = METRICS.map((m) => ({ label: m.label, value: data.latest![m.key] }));
+    const sorted = [...scored].sort((a, b) => b.value - a.value);
+    return { strength: sorted[0], weakness: sorted[sorted.length - 1] };
+  }, [data]);
+
+  // 成長（初回→最新の総合スコア差）
+  const growth = useMemo(() => {
+    if (!data || data.history.length < 2) return null;
+    const first = data.history[0].total_score;
+    const last = data.history[data.history.length - 1].total_score;
+    return Math.round((last - first) * 10) / 10;
+  }, [data]);
 
   return (
     <>
       <Head>
-        <title>{data ? `${data.name} | ` : ""}選手詳細 | sports-tech スカウト</title>
+        <title>{data ? `${data.name} | ` : ""}選手分析 | sports-tech スカウト</title>
       </Head>
       <div className={styles.page}>
         <header className={styles.header}>
@@ -74,6 +102,7 @@ export default function AthleteDetailPage() {
 
           {data ? (
             <>
+              {/* ── ヘッダー ── */}
               <div className={styles.detailHead}>
                 {data.latest ? (
                   <div className={styles.bigRing}>
@@ -97,6 +126,7 @@ export default function AthleteDetailPage() {
                     {[
                       data.height_cm ? `身長 ${data.height_cm}cm` : null,
                       data.weight_kg ? `体重 ${data.weight_kg}kg` : null,
+                      data.bmi ? `BMI ${data.bmi}` : null,
                     ]
                       .filter(Boolean)
                       .join(" ・ ") || "身体データ未登録"}
@@ -106,6 +136,155 @@ export default function AthleteDetailPage() {
 
               {data.latest ? (
                 <>
+                  {/* ── KPI アナリティクス ── */}
+                  <div className={styles.analyticsGrid}>
+                    <div className={styles.kpiCard}>
+                      <div className={styles.kpiValue}>
+                        {data.percentile != null ? `上位${100 - data.percentile}` : "—"}
+                        {data.percentile != null ? <span className={styles.kpiUnit}>%</span> : null}
+                      </div>
+                      <div className={styles.kpiLabel}>同ポジション内の順位</div>
+                      {data.benchmark ? (
+                        <div
+                          className={styles.kpiSub}
+                          style={{ color: "var(--color-text-subtle)" }}
+                        >
+                          {data.benchmark.sample_size}人中
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className={styles.kpiCard}>
+                      <div className={styles.kpiValue}>
+                        {data.benchmark ? data.benchmark.total_score : "—"}
+                      </div>
+                      <div className={styles.kpiLabel}>同ポジション平均</div>
+                      {data.benchmark ? (
+                        <div
+                          className={`${styles.kpiSub} ${
+                            data.latest.total_score >= data.benchmark.total_score
+                              ? styles.deltaPos
+                              : styles.deltaNeg
+                          }`}
+                        >
+                          {data.latest.total_score >= data.benchmark.total_score ? "+" : ""}
+                          {Math.round((data.latest.total_score - data.benchmark.total_score) * 10) /
+                            10}{" "}
+                          差
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className={styles.kpiCard}>
+                      <div className={styles.kpiValue}>{data.consistency ?? "—"}</div>
+                      <div className={styles.kpiLabel}>安定性スコア</div>
+                      <div className={styles.kpiSub} style={{ color: "var(--color-text-subtle)" }}>
+                        高いほど好調が持続
+                      </div>
+                    </div>
+                    <div className={styles.kpiCard}>
+                      <div
+                        className={`${styles.kpiValue} ${
+                          growth != null && growth >= 0 ? styles.deltaPos : styles.deltaNeg
+                        }`}
+                      >
+                        {growth != null ? `${growth >= 0 ? "+" : ""}${growth}` : "—"}
+                      </div>
+                      <div className={styles.kpiLabel}>成長（初回→最新）</div>
+                    </div>
+                  </div>
+
+                  {/* ── 強み・課題 ── */}
+                  {insights ? (
+                    <div className={styles.insightRow} style={{ marginBottom: "var(--space-6)" }}>
+                      <div className={`${styles.insightCard} ${styles.insightStrength}`}>
+                        <div
+                          className={styles.insightLabel}
+                          style={{ color: "var(--color-success)" }}
+                        >
+                          💪 最大の強み
+                        </div>
+                        <div className={styles.insightMain}>{insights.strength.label}</div>
+                        <div className={styles.insightSub}>
+                          {insights.strength.value} 点 ・{" "}
+                          {ratingLabel(insights.strength.value).text}
+                        </div>
+                      </div>
+                      <div className={`${styles.insightCard} ${styles.insightWeak}`}>
+                        <div
+                          className={styles.insightLabel}
+                          style={{ color: "var(--color-warning)" }}
+                        >
+                          🎯 伸びしろ
+                        </div>
+                        <div className={styles.insightMain}>{insights.weakness.label}</div>
+                        <div className={styles.insightSub}>
+                          {insights.weakness.value} 点 ・{" "}
+                          {ratingLabel(insights.weakness.value).text}
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {/* ── 項目別スコア（平均比較） ── */}
+                  <section className={styles.section}>
+                    <h2 className={styles.subheading}>項目別スコア（同ポジション平均との比較）</h2>
+                    <div
+                      className={styles.chartWrap}
+                      style={{ display: "block", padding: "var(--space-5)" }}
+                    >
+                      {METRICS.map((m) => {
+                        const v = data.latest![m.key as MetricKey];
+                        const avg = data.benchmark
+                          ? (data.benchmark[m.key as keyof typeof data.benchmark] as number)
+                          : null;
+                        const delta = avg != null ? Math.round((v - avg) * 10) / 10 : null;
+                        const rating = ratingLabel(v);
+                        return (
+                          <div key={m.key} className={styles.metricRow}>
+                            <div className={styles.metricHead}>
+                              <span className={styles.metricName}>{m.label}</span>
+                              <span>
+                                <span
+                                  className={styles.metricValue}
+                                  style={{ color: rating.color }}
+                                >
+                                  {v}
+                                </span>
+                                {delta != null ? (
+                                  <span
+                                    className={`${styles.metricDelta} ${
+                                      delta >= 0 ? styles.deltaPos : styles.deltaNeg
+                                    }`}
+                                  >
+                                    ({delta >= 0 ? "+" : ""}
+                                    {delta})
+                                  </span>
+                                ) : null}
+                              </span>
+                            </div>
+                            <div className={styles.metricBarTrack}>
+                              <div
+                                className={styles.metricBarFill}
+                                style={{ width: `${Math.min(100, v)}%`, background: rating.color }}
+                              />
+                              {avg != null ? (
+                                <div
+                                  className={styles.metricAvgMark}
+                                  style={{ left: `${Math.min(100, avg)}%` }}
+                                  title={`平均 ${avg}`}
+                                />
+                              ) : null}
+                            </div>
+                            <div className={styles.metricLegend}>
+                              評価: {rating.text}
+                              {avg != null ? ` ・ 平均 ${avg}（縦線）` : ""}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+
+                  {/* ── 能力バランス ── */}
                   <section className={styles.section}>
                     <h2 className={styles.subheading}>能力バランス</h2>
                     <div className={styles.chartWrap}>
@@ -113,12 +292,41 @@ export default function AthleteDetailPage() {
                     </div>
                   </section>
 
+                  {/* ── 総合スコア推移 ── */}
                   <section className={styles.section}>
                     <h2 className={styles.subheading}>総合スコアの推移</h2>
                     <div className={styles.chartWrap}>
                       <ScoreHistoryChart history={data.history} />
                     </div>
                   </section>
+
+                  {/* ── スカウト向け総評 ── */}
+                  {insights && data.benchmark ? (
+                    <section className={styles.section}>
+                      <h2 className={styles.subheading}>スカウト向け総評（自動生成・参考）</h2>
+                      <div className={styles.summaryBox}>
+                        {data.name}は{data.position}として同ポジション{data.benchmark.sample_size}
+                        人中
+                        {data.percentile != null ? `上位${100 - data.percentile}%` : "—"}に位置し、
+                        総合スコアは平均を
+                        {Math.round((data.latest.total_score - data.benchmark.total_score) * 10) /
+                          10}
+                        ポイント
+                        {data.latest.total_score >= data.benchmark.total_score
+                          ? "上回る"
+                          : "下回る"}
+                        。 特に「{insights.strength.label}」（{insights.strength.value}
+                        点）が武器で、 「{insights.weakness.label}」（{insights.weakness.value}
+                        点）に伸びしろがある。
+                        {growth != null && growth > 0
+                          ? `直近は総合+${growth}ポイントと成長傾向。`
+                          : growth != null && growth < 0
+                            ? `直近は総合${growth}ポイントとやや下降。`
+                            : ""}
+                        安定性スコアは{data.consistency ?? "—"}。
+                      </div>
+                    </section>
+                  ) : null}
                 </>
               ) : (
                 <p className={styles.empty}>分析データがまだありません。</p>

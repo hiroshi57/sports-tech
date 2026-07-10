@@ -17,6 +17,7 @@ from app.core.dependencies import ScoutOrCoach
 from app.schemas.athlete import (
     AthleteScoresResponse,
     AthleteSearchItem,
+    MetricBenchmark,
     ScoreSnapshot,
 )
 from app.services import scout_service
@@ -114,6 +115,8 @@ def get_athlete_scores(
     スコアは参考値（is_reference_score: true）。
     """
     profile, latest, history = scout_service.get_athlete_scores(db, athlete_id, current_user)
+    analytics = scout_service.compute_analytics(db, profile, latest, history)
+    bench = analytics.benchmark
     return AthleteScoresResponse(
         id=profile.id,
         name=profile.name,
@@ -124,4 +127,17 @@ def get_athlete_scores(
         weight_kg=profile.weight_kg,
         latest=_to_snapshot(latest) if latest is not None else None,
         history=[_to_snapshot(r) for r in reversed(history)],  # 古い順（履歴グラフ用）
+        benchmark=MetricBenchmark(
+            sprint_score=bench.sprint_score,
+            ball_control_score=bench.ball_control_score,
+            positioning_score=bench.positioning_score,
+            body_usage_score=bench.body_usage_score,
+            total_score=bench.total_score,
+            sample_size=bench.sample_size,
+        )
+        if bench is not None
+        else None,
+        percentile=analytics.percentile,
+        consistency=analytics.consistency,
+        bmi=analytics.bmi,
     )

@@ -98,6 +98,36 @@ export function demoScores(id: string): AthleteScores {
       analyzed_at: `2026-0${i + 4}-01T00:00:00Z`,
     };
   });
+  const latest = history[history.length - 1];
+
+  // 同ポジション平均（ベンチマーク）
+  const peers = ATHLETES.filter((x) => x.position === a.position);
+  const mean = (idx: number) =>
+    Math.round((peers.reduce((s, p) => s + p.base[idx], 0) / peers.length) * 10) / 10;
+  const benchmark = {
+    sprint_score: mean(0),
+    ball_control_score: mean(1),
+    positioning_score: mean(2),
+    body_usage_score: mean(3),
+    total_score:
+      Math.round((peers.reduce((s, p) => s + total(p.base), 0) / peers.length) * 10) / 10,
+    sample_size: peers.length,
+  };
+
+  // パーセンタイル（同ポジション内で自分以下の割合）
+  const myTotal = total(a.base);
+  const below = peers.filter((p) => total(p.base) <= myTotal).length;
+  const percentile = Math.round((below / peers.length) * 100);
+
+  // 安定性（履歴総合スコアの標準偏差 → 0-100）
+  const totals = history.map((h) => h.total_score);
+  const avg = totals.reduce((s, v) => s + v, 0) / totals.length;
+  const sd = Math.sqrt(totals.reduce((s, v) => s + (v - avg) ** 2, 0) / totals.length);
+  const consistency = Math.round(Math.max(0, 100 - sd * 5) * 10) / 10;
+
+  const h = a.height_cm / 100;
+  const bmi = Math.round((a.weight_kg / (h * h)) * 10) / 10;
+
   return {
     id: a.id,
     name: a.name,
@@ -106,8 +136,12 @@ export function demoScores(id: string): AthleteScores {
     location: a.location,
     height_cm: a.height_cm,
     weight_kg: a.weight_kg,
-    latest: history[history.length - 1],
+    latest,
     history,
+    benchmark,
+    percentile,
+    consistency,
+    bmi,
     is_reference_score: true,
   };
 }

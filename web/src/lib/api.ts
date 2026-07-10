@@ -149,6 +149,15 @@ export interface ScoreSnapshot {
   analyzed_at: string;
 }
 
+export interface MetricBenchmark {
+  sprint_score: number;
+  ball_control_score: number;
+  positioning_score: number;
+  body_usage_score: number;
+  total_score: number;
+  sample_size: number;
+}
+
 export interface AthleteScores {
   id: string;
   name: string;
@@ -159,6 +168,10 @@ export interface AthleteScores {
   weight_kg: number | null;
   latest: ScoreSnapshot | null;
   history: ScoreSnapshot[];
+  benchmark: MetricBenchmark | null;
+  percentile: number | null;
+  consistency: number | null;
+  bmi: number | null;
   is_reference_score: boolean;
 }
 

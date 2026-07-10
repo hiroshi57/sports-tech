@@ -88,8 +88,19 @@ class ScoreSnapshot(BaseModel):
     analyzed_at: datetime
 
 
+class MetricBenchmark(BaseModel):
+    """項目別のベンチマーク（同ポジション平均）。"""
+
+    sprint_score: float
+    ball_control_score: float
+    positioning_score: float
+    body_usage_score: float
+    total_score: float
+    sample_size: int  # 比較対象人数
+
+
 class AthleteScoresResponse(BaseModel):
-    """選手のスコア詳細（最新 + 履歴）。"""
+    """選手のスコア詳細（最新 + 履歴 + アナリティクス）。"""
 
     id: uuid.UUID
     name: str
@@ -100,4 +111,9 @@ class AthleteScoresResponse(BaseModel):
     weight_kg: float | None
     latest: ScoreSnapshot | None
     history: list[ScoreSnapshot]
+    # ── アナリティクス ──
+    benchmark: MetricBenchmark | None  # 同ポジション平均
+    percentile: float | None  # 総合スコアの同ポジション内パーセンタイル(0-100)
+    consistency: float | None  # 総合スコアの安定性(0-100, 高いほど安定)
+    bmi: float | None
     is_reference_score: bool = True
