@@ -4,8 +4,17 @@
  * JWT は localStorage に保持する（Phase 2 で httpOnly Cookie / Supabase に移行）。
  */
 
+import { demoScores, demoSearch } from "./demo";
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const TOKEN_KEY = "sportstech_scout_token";
+
+/** デモモード（バックエンド無しで動作） */
+export const DEMO = process.env.NEXT_PUBLIC_DEMO === "1";
+
+function delay<T>(value: T, ms = 300): Promise<T> {
+  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
+}
 
 export class ApiError extends Error {
   constructor(
@@ -72,10 +81,14 @@ export interface MeResponse {
 }
 
 export function login(email: string): Promise<TokenResponse> {
+  if (DEMO) return delay({ access_token: "demo-token", token_type: "bearer" });
   return request<TokenResponse>("POST", "/api/auth/login", { email });
 }
 
 export function fetchMe(): Promise<MeResponse> {
+  if (DEMO) {
+    return delay({ id: "demo", email: "demo-scout@example.com", role: "scout", is_active: true });
+  }
   return request<MeResponse>("GET", "/api/auth/me");
 }
 
@@ -101,6 +114,16 @@ export interface SearchFilters {
 }
 
 export function searchAthletes(filters: SearchFilters): Promise<AthleteSearchItem[]> {
+  if (DEMO) {
+    let items = demoSearch();
+    if (filters.position) items = items.filter((a) => a.position === filters.position);
+    if (filters.location)
+      items = items.filter((a) => (a.location ?? "").includes(filters.location!));
+    if (filters.min_total_score != null) {
+      items = items.filter((a) => (a.latest_total_score ?? -1) >= filters.min_total_score!);
+    }
+    return delay(items);
+  }
   const params = new URLSearchParams();
   if (filters.position) params.set("position", filters.position);
   if (filters.sport) params.set("sport", filters.sport);
@@ -140,5 +163,6 @@ export interface AthleteScores {
 }
 
 export function getAthleteScores(id: string): Promise<AthleteScores> {
+  if (DEMO) return delay(demoScores(id));
   return request<AthleteScores>("GET", `/api/scouts/athletes/${id}/scores`);
 }
