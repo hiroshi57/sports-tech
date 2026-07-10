@@ -49,3 +49,7 @@ npm-debug.*
 yarn-debug.*
 yarn-error.*
 .metro-health-check*
+
+# ローカル確認用DB
+backend/demo.db
+backend/*.db
