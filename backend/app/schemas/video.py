@@ -115,6 +115,10 @@ class AnalysisResultResponse(BaseModel):
     body_usage_score: float
     total_score: float
     confidence: float
+    # ── 信頼性メタ（A #2: 誤差範囲の明示）──
+    error_margin: float  # ±この点数の不確実性
+    reliability_level: str  # high / moderate / low
+    reliability_note: str
     feedback: str | None
     analyzed_at: datetime  # created_at を alias として使用
     is_reference_score: bool = True  # 常に True: 参考スコアである旨をクライアントに通知
@@ -122,6 +126,9 @@ class AnalysisResultResponse(BaseModel):
     # created_at → analyzed_at へのマッピング
     @classmethod
     def from_orm_with_alias(cls, obj: object) -> "AnalysisResultResponse":
+        from app.services import reliability
+
+        conf = obj.confidence  # type: ignore[attr-defined]
         data = {
             "id": obj.id,  # type: ignore[attr-defined]
             "video_id": obj.video_id,  # type: ignore[attr-defined]
@@ -130,7 +137,10 @@ class AnalysisResultResponse(BaseModel):
             "positioning_score": obj.positioning_score,  # type: ignore[attr-defined]
             "body_usage_score": obj.body_usage_score,  # type: ignore[attr-defined]
             "total_score": obj.total_score,  # type: ignore[attr-defined]
-            "confidence": obj.confidence,  # type: ignore[attr-defined]
+            "confidence": conf,
+            "error_margin": reliability.error_margin(conf),
+            "reliability_level": reliability.reliability_level(conf),
+            "reliability_note": reliability.reliability_note(conf),
             "feedback": obj.feedback,  # type: ignore[attr-defined]
             "analyzed_at": obj.created_at,  # type: ignore[attr-defined]
         }

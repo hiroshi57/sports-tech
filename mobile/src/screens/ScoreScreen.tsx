@@ -94,7 +94,18 @@ export default function ScoreScreen({ videoId, onBack }: Props) {
           <View style={styles.totalBox} testID="score-total">
             <Text style={styles.totalLabel}>総合スコア（参考値）</Text>
             <Text style={styles.totalValue}>{analysis.total_score}</Text>
+            <Text style={styles.totalMargin} testID="score-margin">
+              ± {analysis.error_margin}（信頼度:{" "}
+              {analysis.reliability_level === "high"
+                ? "高"
+                : analysis.reliability_level === "moderate"
+                  ? "中"
+                  : "低"}
+              ）
+            </Text>
           </View>
+
+          <Text style={styles.reliabilityNote}>{analysis.reliability_note}</Text>
 
           <RadarChart axes={axes} />
 
@@ -154,6 +165,13 @@ const styles = StyleSheet.create({
   },
   totalLabel: { color: "#cbd5e1", fontSize: 13 },
   totalValue: { color: "#fff", fontSize: 44, fontWeight: "bold" },
+  totalMargin: { color: "#cbd5e1", fontSize: 12, marginTop: 2 },
+  reliabilityNote: {
+    color: colors.textMuted,
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 16,
+  },
   scoreList: { marginTop: 20 },
   scoreRow: {
     flexDirection: "row",

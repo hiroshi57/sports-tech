@@ -137,6 +137,9 @@ export interface AnalysisResultResponse {
   body_usage_score: number;
   total_score: number;
   confidence: number;
+  error_margin: number;
+  reliability_level: "high" | "moderate" | "low";
+  reliability_note: string;
   feedback: string | null;
   analyzed_at: string;
   is_reference_score: boolean;
