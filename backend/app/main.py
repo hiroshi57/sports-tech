@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.routers import (
+    account,
     activities,
     auth,
     health,
@@ -38,6 +39,7 @@ app.include_router(selfcare.router, prefix="/api/selfcare", tags=["selfcare"])
 app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])
 app.include_router(training.router, prefix="/api/training", tags=["training"])
 app.include_router(reviews.router, prefix="/api/reviews", tags=["reviews"])
+app.include_router(account.router, prefix="/api/account", tags=["account"])
 
 
 @app.get("/")
