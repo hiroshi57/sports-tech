@@ -127,7 +127,9 @@ class AnalysisResultResponse(BaseModel):
 
     # created_at → analyzed_at へのマッピング
     @classmethod
-    def from_orm_with_alias(cls, obj: object) -> "AnalysisResultResponse":
+    def from_orm_with_alias(
+        cls, obj: object, position: str | None = None
+    ) -> "AnalysisResultResponse":
         from app.services import reliability, score_explain
 
         conf = obj.confidence  # type: ignore[attr-defined]
@@ -145,6 +147,7 @@ class AnalysisResultResponse(BaseModel):
                 obj.ball_control_score,  # type: ignore[attr-defined]
                 obj.positioning_score,  # type: ignore[attr-defined]
                 obj.body_usage_score,  # type: ignore[attr-defined]
+                position,
             )
         ]
         data = {

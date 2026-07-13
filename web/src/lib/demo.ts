@@ -99,8 +99,18 @@ const ATHLETES: DemoAthlete[] = [
   },
 ];
 
-function total(b: [number, number, number, number]): number {
-  return Math.round((b[0] * 0.3 + b[1] * 0.3 + b[2] * 0.2 + b[3] * 0.2) * 10) / 10;
+// ポジション別重み（backend position_weights.py と一致）
+const POSITION_WEIGHTS: Record<string, [number, number, number, number]> = {
+  FW: [0.35, 0.35, 0.2, 0.1],
+  MF: [0.25, 0.3, 0.3, 0.15],
+  DF: [0.2, 0.15, 0.35, 0.3],
+  GK: [0.1, 0.2, 0.35, 0.35],
+};
+const BALANCED_W: [number, number, number, number] = [0.3, 0.3, 0.2, 0.2];
+
+function total(b: [number, number, number, number], position?: string): number {
+  const w = (position && POSITION_WEIGHTS[position.toUpperCase()]) || BALANCED_W;
+  return Math.round((b[0] * w[0] + b[1] * w[1] + b[2] * w[2] + b[3] * w[3]) * 10) / 10;
 }
 
 export function demoSearch(): AthleteSearchItem[] {
@@ -112,7 +122,7 @@ export function demoSearch(): AthleteSearchItem[] {
     location: a.location,
     height_cm: a.height_cm,
     weight_kg: a.weight_kg,
-    latest_total_score: total(a.base),
+    latest_total_score: total(a.base, a.position),
     is_reference_score: true,
   })).sort((x, y) => (y.latest_total_score ?? 0) - (x.latest_total_score ?? 0));
 }
@@ -127,7 +137,7 @@ export function demoScores(id: string): AthleteScores {
       ball_control_score: b[1],
       positioning_score: b[2],
       body_usage_score: b[3],
-      total_score: total(b),
+      total_score: total(b, a.position),
       analyzed_at: `2026-0${i + 4}-01T00:00:00Z`,
     };
   });
@@ -143,13 +153,14 @@ export function demoScores(id: string): AthleteScores {
     positioning_score: mean(2),
     body_usage_score: mean(3),
     total_score:
-      Math.round((peers.reduce((s, p) => s + total(p.base), 0) / peers.length) * 10) / 10,
+      Math.round((peers.reduce((s, p) => s + total(p.base, p.position), 0) / peers.length) * 10) /
+      10,
     sample_size: peers.length,
   };
 
   // パーセンタイル（同ポジション内で自分以下の割合）
-  const myTotal = total(a.base);
-  const below = peers.filter((p) => total(p.base) <= myTotal).length;
+  const myTotal = total(a.base, a.position);
+  const below = peers.filter((p) => total(p.base, p.position) <= myTotal).length;
   const percentile = Math.round((below / peers.length) * 100);
 
   // 安定性（履歴総合スコアの標準偏差 → 0-100）

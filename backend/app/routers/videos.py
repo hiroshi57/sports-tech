@@ -137,7 +137,15 @@ def get_video_analysis(
     選手評価の唯一の根拠として使用しないこと。
     """
     result = video_service.get_video_analysis(db, video_id, current_user)
-    return AnalysisResultResponse.from_orm_with_alias(result)
+    # ポジション別重み(B#18)で内訳を算出するため所有者のポジションを解決
+    from sqlalchemy import select
+
+    from app.models.athlete import AthleteProfile
+
+    position = db.execute(
+        select(AthleteProfile.position).where(AthleteProfile.user_id == current_user.id)
+    ).scalar_one_or_none()
+    return AnalysisResultResponse.from_orm_with_alias(result, position=position)
 
 
 @router.get(

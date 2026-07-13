@@ -21,7 +21,7 @@ import logging
 import uuid
 from dataclasses import dataclass
 
-from app.services import scoring
+from app.services import position_weights, scoring
 from app.services.pose_estimation import (
     PoseEstimationError,
     PoseSequence,
@@ -70,15 +70,17 @@ def _deterministic_score(video_id: uuid.UUID, salt: str) -> float:
     return round(40.0 + value / 100.0, 1)  # 40.0〜85.9
 
 
-def analyze(video_id: uuid.UUID, s3_key: str) -> AnalysisScores:
+def analyze(video_id: uuid.UUID, s3_key: str, position: str | None = None) -> AnalysisScores:
     """
     動画を分析してスコアを返す。
 
     姿勢推定パイプラインを試み、利用不可 or 失敗時はスタブにフォールバックする。
+    総合スコアはポジション別の重み(B#18)で算出する。
 
     Args:
         video_id: 対象動画の ID
         s3_key: S3 オブジェクトキー
+        position: 選手ポジション（FW/MF/DF/GK）。None は balanced 重み。
 
     Returns:
         AnalysisScores
@@ -87,10 +89,10 @@ def analyze(video_id: uuid.UUID, s3_key: str) -> AnalysisScores:
         seq = extract_pose_from_s3(s3_key)
     except PoseEstimationError as exc:
         logger.info("姿勢推定を利用できません（%s）— スタブにフォールバック", exc)
-        return _stub_scores(video_id)
+        return _stub_scores(video_id, position)
     except Exception as exc:  # 動画破損・DL 失敗など
         logger.warning("姿勢推定に失敗（video=%s）: %s — スタブにフォールバック", video_id, exc)
-        return _stub_scores(video_id)
+        return _stub_scores(video_id, position)
 
     if len(seq.frames) < MIN_FRAMES_FOR_SCORING:
         logger.info(
@@ -98,19 +100,19 @@ def analyze(video_id: uuid.UUID, s3_key: str) -> AnalysisScores:
             len(seq.frames),
             MIN_FRAMES_FOR_SCORING,
         )
-        return _stub_scores(video_id)
+        return _stub_scores(video_id, position)
 
-    return _score_from_pose(seq)
+    return _score_from_pose(seq, position)
 
 
-def _score_from_pose(seq: PoseSequence) -> AnalysisScores:
+def _score_from_pose(seq: PoseSequence, position: str | None = None) -> AnalysisScores:
     """ポーズ時系列からスコアを算出する。"""
     sprint = scoring.compute_sprint_score(seq)
     ball = scoring.compute_ball_control_score(seq)
     positioning = scoring.compute_positioning_score(seq)
     body = scoring.compute_body_usage_score(seq)
 
-    total = round(sprint * 0.3 + ball * 0.3 + positioning * 0.2 + body * 0.2, 1)
+    total = position_weights.weighted_total(sprint, ball, positioning, body, position)
 
     return AnalysisScores(
         sprint_score=sprint,
@@ -123,14 +125,14 @@ def _score_from_pose(seq: PoseSequence) -> AnalysisScores:
     )
 
 
-def _stub_scores(video_id: uuid.UUID) -> AnalysisScores:
+def _stub_scores(video_id: uuid.UUID, position: str | None = None) -> AnalysisScores:
     """決定論的スタブスコア（姿勢推定が使えない場合のフォールバック）。"""
     sprint = _deterministic_score(video_id, "sprint")
     ball = _deterministic_score(video_id, "ball_control")
     positioning = _deterministic_score(video_id, "positioning")
     body = _deterministic_score(video_id, "body_usage")
 
-    total = round(sprint * 0.3 + ball * 0.3 + positioning * 0.2 + body * 0.2, 1)
+    total = position_weights.weighted_total(sprint, ball, positioning, body, position)
 
     return AnalysisScores(
         sprint_score=sprint,

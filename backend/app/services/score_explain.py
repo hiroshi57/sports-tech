@@ -9,7 +9,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-# 総合スコアの重み（analysis_engine と一致させること）
+from app.services import position_weights
+
+# balanced 重み（後方互換の既定）。ポジション別は position_weights を参照。
 SCORE_WEIGHTS: dict[str, float] = {
     "sprint_score": 0.3,
     "ball_control_score": 0.3,
@@ -36,16 +38,28 @@ class ScoreFactor:
 
 
 def explain_total(
-    sprint: float, ball_control: float, positioning: float, body_usage: float
+    sprint: float,
+    ball_control: float,
+    positioning: float,
+    body_usage: float,
+    position: str | None = None,
 ) -> list[ScoreFactor]:
-    """4 サブスコアから総合スコアへの寄与内訳を算出する（寄与降順）。"""
+    """4 サブスコアから総合スコアへの寄与内訳を算出する（寄与降順・ポジション重み対応）。"""
     values = {
         "sprint_score": sprint,
         "ball_control_score": ball_control,
         "positioning_score": positioning,
         "body_usage_score": body_usage,
     }
-    contributions = {k: values[k] * SCORE_WEIGHTS[k] for k in values}
+    # ポジション重み（sprint/ball_control/... のキー）を *_score キーに対応付け
+    pw = position_weights.weights_for(position)
+    weights = {
+        "sprint_score": pw["sprint"],
+        "ball_control_score": pw["ball_control"],
+        "positioning_score": pw["positioning"],
+        "body_usage_score": pw["body_usage"],
+    }
+    contributions = {k: values[k] * weights[k] for k in values}
     total = sum(contributions.values())
 
     factors = [
@@ -53,7 +67,7 @@ def explain_total(
             key=k,
             label=_LABELS[k],
             value=round(values[k], 1),
-            weight=SCORE_WEIGHTS[k],
+            weight=weights[k],
             contribution=round(contributions[k], 1),
             contribution_pct=round(contributions[k] / total * 100, 1) if total > 0 else 0.0,
         )

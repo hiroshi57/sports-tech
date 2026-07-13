@@ -66,7 +66,10 @@ def analyze_video(self, video_id: str) -> dict:
 
         try:
             # ── 分析実行（現在はスタブエンジン）─────────────────────
-            scores = analysis_engine.analyze(video.id, video.s3_key)
+            # ポジション別の重み付け(B#18)のため選手ポジションを解決
+            _profile = db.get(AthleteProfile, video.athlete_id)
+            _position = _profile.position if _profile is not None else None
+            scores = analysis_engine.analyze(video.id, video.s3_key, _position)
 
             # ── 結果保存（再実行時は既存結果を置き換え）─────────────
             existing = (
