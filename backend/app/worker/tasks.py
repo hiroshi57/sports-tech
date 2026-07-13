@@ -149,3 +149,31 @@ def dispatch_analysis(video_id: uuid.UUID) -> str | None:
     except Exception as exc:  # broker 接続エラー等
         logger.error("dispatch_analysis: failed to enqueue video %s: %s", video_id, exc)
         return None
+
+
+@celery_app.task(name="app.worker.tasks.run_retention")
+def run_retention() -> dict:
+    """
+    動画の保存期間バッチ(D#35)。日次で予告・満了削除を実行する。
+
+    Celery beat 例:
+        celery_app.conf.beat_schedule = {
+            "video-retention": {"task": "app.worker.tasks.run_retention", "schedule": 86400.0},
+        }
+    """
+    from app.services import retention_service
+
+    db = SessionLocal()
+    try:
+        result = retention_service.process_retention(db)
+        logger.info(
+            "run_retention: warned=%d deleted=%d",
+            len(result.warned_video_ids),
+            len(result.deleted_video_ids),
+        )
+        return {
+            "warned": len(result.warned_video_ids),
+            "deleted": len(result.deleted_video_ids),
+        }
+    finally:
+        db.close()

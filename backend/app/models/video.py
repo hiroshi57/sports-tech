@@ -2,8 +2,19 @@
 
 import enum
 import uuid
+from datetime import datetime
 
-from sqlalchemy import CheckConstraint, Enum, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -54,6 +65,13 @@ class Video(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     # Celery タスク ID（分析ジョブ追跡用）
     celery_task_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # 保存期間管理（D#35）: 最終アクセス日時。満了判定の起点。
+    last_accessed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # 満了予告通知の送信済みフラグ（重複通知防止）
+    retention_warned: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     # リレーション
     athlete: Mapped["AthleteProfile"] = relationship(  # noqa: F821
