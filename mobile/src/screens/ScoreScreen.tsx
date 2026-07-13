@@ -118,6 +118,24 @@ export default function ScoreScreen({ videoId, onBack }: Props) {
             ))}
           </View>
 
+          {analysis.score_breakdown && analysis.score_breakdown.length > 0 ? (
+            <View style={styles.breakdownBox} testID="score-breakdown">
+              <Text style={styles.breakdownTitle}>総合スコアの内訳（寄与度）</Text>
+              {analysis.score_breakdown.map((f) => (
+                <View key={f.key} style={styles.breakdownRow}>
+                  <Text style={styles.breakdownLabel}>{f.label}</Text>
+                  <View style={styles.breakdownBarTrack}>
+                    <View style={[styles.breakdownBarFill, { width: `${f.contribution_pct}%` }]} />
+                  </View>
+                  <Text style={styles.breakdownPct}>{f.contribution_pct}%</Text>
+                </View>
+              ))}
+              <Text style={styles.breakdownNote}>
+                総合 = スプリント×0.3 + ボール×0.3 + ポジ×0.2 + 身体×0.2
+              </Text>
+            </View>
+          ) : null}
+
           {analysis.feedback ? (
             <View style={styles.feedbackBox}>
               <Text style={styles.feedbackText}>{analysis.feedback}</Text>
@@ -191,6 +209,27 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   feedbackText: { fontSize: 13, color: colors.text, lineHeight: 20 },
+  breakdownBox: {
+    backgroundColor: colors.card,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 14,
+    marginTop: 20,
+  },
+  breakdownTitle: { fontSize: 14, fontWeight: "600", color: colors.text, marginBottom: 10 },
+  breakdownRow: { flexDirection: "row", alignItems: "center", marginBottom: 8, gap: 8 },
+  breakdownLabel: { fontSize: 12, color: colors.text, width: 96 },
+  breakdownBarTrack: {
+    flex: 1,
+    height: 8,
+    backgroundColor: colors.background,
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  breakdownBarFill: { height: "100%", backgroundColor: colors.accent, borderRadius: 4 },
+  breakdownPct: { fontSize: 12, color: colors.textMuted, width: 40, textAlign: "right" },
+  breakdownNote: { fontSize: 10, color: colors.textMuted, marginTop: 6 },
   disclaimer: {
     fontSize: 11,
     color: colors.textMuted,

@@ -140,9 +140,19 @@ export interface AnalysisResultResponse {
   error_margin: number;
   reliability_level: "high" | "moderate" | "low";
   reliability_note: string;
+  score_breakdown: ScoreFactor[];
   feedback: string | null;
   analyzed_at: string;
   is_reference_score: boolean;
+}
+
+export interface ScoreFactor {
+  key: string;
+  label: string;
+  value: number;
+  weight: number;
+  contribution: number;
+  contribution_pct: number;
 }
 
 export function fetchAnalysis(videoId: string): Promise<AnalysisResultResponse> {
