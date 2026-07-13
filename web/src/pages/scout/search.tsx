@@ -51,6 +51,14 @@ export default function ScoutSearchPage() {
     void router.push("/auth/login");
   };
 
+  // 比較対象の選択（最大4人）
+  const [compareIds, setCompareIds] = useState<string[]>([]);
+  const toggleCompare = (id: string) => {
+    setCompareIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length >= 4 ? prev : [...prev, id]
+    );
+  };
+
   // KPI 集計
   const stats = useMemo(() => {
     const scored = athletes.filter((a) => a.latest_total_score != null);
@@ -169,24 +177,59 @@ export default function ScoutSearchPage() {
 
           <div className={styles.grid}>
             {athletes.map((a) => (
-              <Link key={a.id} href={`/scout/athletes/${a.id}`} className={styles.card}>
-                {a.latest_total_score != null ? (
-                  <div className={styles.ring}>
-                    <ScoreRing value={a.latest_total_score} />
-                    <span className={styles.ringValue}>{a.latest_total_score}</span>
+              <div key={a.id} className={styles.card}>
+                <Link
+                  href={`/scout/athletes/${a.id}`}
+                  style={{ display: "contents", color: "inherit" }}
+                >
+                  {a.latest_total_score != null ? (
+                    <div className={styles.ring}>
+                      <ScoreRing value={a.latest_total_score} />
+                      <span className={styles.ringValue}>{a.latest_total_score}</span>
+                    </div>
+                  ) : (
+                    <div className={styles.ringEmpty}>分析なし</div>
+                  )}
+                  <div className={styles.cardBody}>
+                    <div className={styles.cardName}>{a.name}</div>
+                    <div className={styles.cardMeta}>
+                      {[a.position, a.sport, a.location].filter(Boolean).join(" ・ ")}
+                    </div>
                   </div>
-                ) : (
-                  <div className={styles.ringEmpty}>分析なし</div>
-                )}
-                <div className={styles.cardBody}>
-                  <div className={styles.cardName}>{a.name}</div>
-                  <div className={styles.cardMeta}>
-                    {[a.position, a.sport, a.location].filter(Boolean).join(" ・ ")}
-                  </div>
-                </div>
-              </Link>
+                </Link>
+                <button
+                  type="button"
+                  className={styles.cardSelect}
+                  style={{ background: "none", border: "none", cursor: "pointer" }}
+                  onClick={() => toggleCompare(a.id)}
+                >
+                  {compareIds.includes(a.id) ? "✓ 比較中" : "＋ 比較に追加"}
+                </button>
+              </div>
             ))}
           </div>
+
+          {compareIds.length > 0 ? (
+            <div className={styles.compareBar}>
+              <div className={styles.compareChips}>
+                {compareIds.map((id) => {
+                  const a = athletes.find((x) => x.id === id);
+                  return (
+                    <span key={id} className={styles.compareChip} onClick={() => toggleCompare(id)}>
+                      {a?.name ?? id} ✕
+                    </span>
+                  );
+                })}
+              </div>
+              <button
+                className={styles.button}
+                disabled={compareIds.length < 2}
+                onClick={() => router.push(`/scout/compare?ids=${compareIds.join(",")}`)}
+              >
+                {compareIds.length < 2 ? "2人以上選択" : `${compareIds.length}人を比較`}
+              </button>
+            </div>
+          ) : null}
 
           <p className={styles.disclaimer}>
             ※ AI スコアはあくまで参考値です。選手評価の唯一の根拠として使用しないでください。
