@@ -91,9 +91,16 @@ export default function AthleteDetailPage() {
             <span className={styles.brandMark}>⚽</span>
             sports-tech スカウト
           </span>
-          <Link className={styles.link} href="/scout/search">
-            ← 検索に戻る
-          </Link>
+          <span style={{ display: "flex", gap: "var(--space-4)", alignItems: "center" }}>
+            {typeof id === "string" ? (
+              <Link className={styles.link} href={`/scout/athletes/${id}/report`}>
+                🖨 レポート出力
+              </Link>
+            ) : null}
+            <Link className={styles.link} href="/scout/search">
+              ← 検索に戻る
+            </Link>
+          </span>
         </header>
 
         <div className={styles.container}>
