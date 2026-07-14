@@ -40,7 +40,11 @@ export function setToken(token: string | null): void {
   }
 }
 
-async function request<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
+async function request<T>(
+  method: "GET" | "POST" | "PATCH" | "DELETE",
+  path: string,
+  body?: unknown
+): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -234,4 +238,87 @@ export interface AthleteScores {
 export function getAthleteScores(id: string): Promise<AthleteScores> {
   if (DEMO) return delay(demoScores(id));
   return request<AthleteScores>("GET", `/api/scouts/athletes/${id}/scores`);
+}
+
+// ── ウォッチリスト(C#22) ────────────────────────────────────────────
+
+export interface WatchlistItem {
+  id: string;
+  athlete_id: string;
+  name: string;
+  position: string | null;
+  sport: string;
+  location: string | null;
+  latest_total_score: number | null;
+  note: string | null;
+  tags: string | null;
+  created_at: string;
+  is_reference_score: boolean;
+}
+
+const DEMO_WATCH_KEY = "sportstech_demo_watchlist";
+
+function demoReadWatch(): WatchlistItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(window.localStorage.getItem(DEMO_WATCH_KEY) ?? "[]") as WatchlistItem[];
+  } catch {
+    return [];
+  }
+}
+
+function demoWriteWatch(items: WatchlistItem[]): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(DEMO_WATCH_KEY, JSON.stringify(items));
+}
+
+export function listWatchlist(): Promise<WatchlistItem[]> {
+  if (DEMO) return delay(demoReadWatch());
+  return request<WatchlistItem[]>("GET", "/api/scouts/watchlist");
+}
+
+export async function addWatchlist(
+  athleteId: string,
+  note?: string,
+  tags?: string
+): Promise<WatchlistItem> {
+  if (DEMO) {
+    const items = demoReadWatch();
+    const found = await getAthlete(athleteId);
+    const existing = items.find((i) => i.athlete_id === athleteId);
+    if (existing) {
+      if (note !== undefined) existing.note = note;
+      if (tags !== undefined) existing.tags = tags;
+      demoWriteWatch(items);
+      return delay(existing);
+    }
+    const item: WatchlistItem = {
+      id: `w-${athleteId}`,
+      athlete_id: athleteId,
+      name: found.name,
+      position: found.position,
+      sport: found.sport,
+      location: found.location,
+      latest_total_score: found.latest_total_score,
+      note: note ?? null,
+      tags: tags ?? null,
+      created_at: new Date().toISOString(),
+      is_reference_score: true,
+    };
+    demoWriteWatch([item, ...items]);
+    return delay(item);
+  }
+  return request<WatchlistItem>("POST", "/api/scouts/watchlist", {
+    athlete_id: athleteId,
+    note,
+    tags,
+  });
+}
+
+export function removeWatchlist(itemId: string): Promise<void> {
+  if (DEMO) {
+    demoWriteWatch(demoReadWatch().filter((i) => i.id !== itemId));
+    return delay(undefined);
+  }
+  return request<void>("DELETE", `/api/scouts/watchlist/${itemId}`);
 }

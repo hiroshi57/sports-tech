@@ -5,9 +5,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import ScoreRing from "@/components/ScoreRing";
 import {
+  addWatchlist,
   ApiError,
   type AthleteSearchItem,
   getToken,
+  listWatchlist,
   searchAthletes,
   setToken,
   type SearchFilters,
@@ -59,6 +61,23 @@ export default function ScoutSearchPage() {
     );
   };
 
+  // ウォッチリスト保存済み athlete_id
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (!getToken()) return;
+    void listWatchlist().then(
+      (list) => setSavedIds(new Set(list.map((i) => i.athlete_id))),
+      () => undefined
+    );
+  }, []);
+  const handleSave = (id: string) => {
+    if (savedIds.has(id)) return;
+    void addWatchlist(id).then(
+      () => setSavedIds((prev) => new Set(prev).add(id)),
+      () => undefined
+    );
+  };
+
   // KPI 集計
   const stats = useMemo(() => {
     const scored = athletes.filter((a) => a.latest_total_score != null);
@@ -86,9 +105,14 @@ export default function ScoutSearchPage() {
             <span className={styles.brandMark}>⚽</span>
             sports-tech スカウト
           </span>
-          <button className={styles.link} onClick={handleLogout}>
-            ログアウト
-          </button>
+          <span style={{ display: "flex", gap: "var(--space-4)", alignItems: "center" }}>
+            <Link className={styles.link} href="/scout/watchlist">
+              ★ ウォッチリスト
+            </Link>
+            <button className={styles.link} onClick={handleLogout}>
+              ログアウト
+            </button>
+          </span>
         </header>
 
         <div className={styles.container}>
@@ -197,14 +221,24 @@ export default function ScoutSearchPage() {
                     </div>
                   </div>
                 </Link>
-                <button
-                  type="button"
-                  className={styles.cardSelect}
-                  style={{ background: "none", border: "none", cursor: "pointer" }}
-                  onClick={() => toggleCompare(a.id)}
-                >
-                  {compareIds.includes(a.id) ? "✓ 比較中" : "＋ 比較に追加"}
-                </button>
+                <div style={{ display: "flex", gap: "var(--space-4)" }}>
+                  <button
+                    type="button"
+                    className={styles.cardSelect}
+                    style={{ background: "none", border: "none", cursor: "pointer" }}
+                    onClick={() => toggleCompare(a.id)}
+                  >
+                    {compareIds.includes(a.id) ? "✓ 比較中" : "＋ 比較に追加"}
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.cardSelect}
+                    style={{ background: "none", border: "none", cursor: "pointer" }}
+                    onClick={() => handleSave(a.id)}
+                  >
+                    {savedIds.has(a.id) ? "★ 保存済み" : "☆ 保存"}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

@@ -8,6 +8,7 @@ from app.models.review import PracticeReview
 from app.models.training import TrainingMenu
 from app.models.user import User, UserRole
 from app.models.video import AnalysisResult, Video, VideoStatus
+from app.models.watchlist import WatchlistItem
 
 __all__ = [
     "Base",
@@ -24,4 +25,5 @@ __all__ = [
     "Notification",
     "NotificationType",
     "PracticeReview",
+    "WatchlistItem",
 ]

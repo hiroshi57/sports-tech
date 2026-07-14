@@ -13,6 +13,7 @@ from app.routers import (
     selfcare,
     training,
     videos,
+    watchlist,
 )
 
 app = FastAPI(
@@ -34,6 +35,7 @@ app.include_router(health.router, prefix="/api", tags=["health"])
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(videos.router, prefix="/api/videos", tags=["videos"])
 app.include_router(scouts.router, prefix="/api/scouts", tags=["scouts"])
+app.include_router(watchlist.router, prefix="/api/scouts/watchlist", tags=["watchlist"])
 app.include_router(activities.router, prefix="/api/activities", tags=["activities"])
 app.include_router(selfcare.router, prefix="/api/selfcare", tags=["selfcare"])
 app.include_router(notifications.router, prefix="/api/notifications", tags=["notifications"])
