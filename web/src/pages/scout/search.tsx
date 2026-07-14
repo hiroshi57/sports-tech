@@ -8,6 +8,7 @@ import {
   addWatchlist,
   ApiError,
   type AthleteSearchItem,
+  createSavedSearch,
   getToken,
   listWatchlist,
   searchAthletes,
@@ -78,6 +79,26 @@ export default function ScoutSearchPage() {
     );
   };
 
+  // 現在の検索条件を保存
+  const [savedMsg, setSavedMsg] = useState<string | null>(null);
+  const handleSaveSearch = () => {
+    const name =
+      [filters.position, filters.location].filter(Boolean).join(" ") ||
+      (filters.min_total_score != null ? `スコア${filters.min_total_score}以上` : "全選手");
+    void createSavedSearch({
+      name,
+      position: filters.position,
+      location: filters.location,
+      min_total_score: filters.min_total_score,
+    }).then(
+      () => {
+        setSavedMsg(`「${name}」を保存しました`);
+        setTimeout(() => setSavedMsg(null), 3000);
+      },
+      () => setSavedMsg("保存に失敗しました")
+    );
+  };
+
   // KPI 集計
   const stats = useMemo(() => {
     const scored = athletes.filter((a) => a.latest_total_score != null);
@@ -108,6 +129,9 @@ export default function ScoutSearchPage() {
           <span style={{ display: "flex", gap: "var(--space-4)", alignItems: "center" }}>
             <Link className={styles.link} href="/scout/watchlist">
               ★ ウォッチリスト
+            </Link>
+            <Link className={styles.link} href="/scout/saved">
+              🔔 保存条件
             </Link>
             <button className={styles.link} onClick={handleLogout}>
               ログアウト
@@ -190,8 +214,21 @@ export default function ScoutSearchPage() {
             <button className={styles.button} type="submit" disabled={loading}>
               {loading ? "検索中…" : "検索"}
             </button>
+            <button
+              type="button"
+              className={styles.button}
+              style={{ background: "var(--color-primary)" }}
+              onClick={handleSaveSearch}
+            >
+              🔔 この条件を保存
+            </button>
           </form>
 
+          {savedMsg ? (
+            <p style={{ color: "var(--color-success)", marginBottom: "var(--space-3)" }}>
+              {savedMsg}
+            </p>
+          ) : null}
           {error ? <p className={styles.error}>{error}</p> : null}
           {loading ? <p className={styles.loading}>読み込み中…</p> : null}
 

@@ -322,3 +322,71 @@ export function removeWatchlist(itemId: string): Promise<void> {
   }
   return request<void>("DELETE", `/api/scouts/watchlist/${itemId}`);
 }
+
+// ── 保存検索・新着アラート(C#23) ────────────────────────────────────
+
+export interface SavedSearch {
+  id: string;
+  name: string;
+  position: string | null;
+  sport: string | null;
+  location: string | null;
+  min_total_score: number | null;
+  last_checked_at: string | null;
+  new_count: number;
+  created_at: string;
+}
+
+const DEMO_SAVED_KEY = "sportstech_demo_saved_searches";
+
+function demoReadSaved(): SavedSearch[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(window.localStorage.getItem(DEMO_SAVED_KEY) ?? "[]") as SavedSearch[];
+  } catch {
+    return [];
+  }
+}
+
+function demoWriteSaved(items: SavedSearch[]): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(DEMO_SAVED_KEY, JSON.stringify(items));
+}
+
+export function listSavedSearches(): Promise<SavedSearch[]> {
+  if (DEMO) return delay(demoReadSaved());
+  return request<SavedSearch[]>("GET", "/api/scouts/saved-searches");
+}
+
+export function createSavedSearch(input: {
+  name: string;
+  position?: string;
+  sport?: string;
+  location?: string;
+  min_total_score?: number;
+}): Promise<SavedSearch> {
+  if (DEMO) {
+    const item: SavedSearch = {
+      id: `ss-${Date.now()}`,
+      name: input.name,
+      position: input.position ?? null,
+      sport: input.sport ?? null,
+      location: input.location ?? null,
+      min_total_score: input.min_total_score ?? null,
+      last_checked_at: new Date().toISOString(),
+      new_count: 0,
+      created_at: new Date().toISOString(),
+    };
+    demoWriteSaved([item, ...demoReadSaved()]);
+    return delay(item);
+  }
+  return request<SavedSearch>("POST", "/api/scouts/saved-searches", input);
+}
+
+export function deleteSavedSearch(id: string): Promise<void> {
+  if (DEMO) {
+    demoWriteSaved(demoReadSaved().filter((s) => s.id !== id));
+    return delay(undefined);
+  }
+  return request<void>("DELETE", `/api/scouts/saved-searches/${id}`);
+}
