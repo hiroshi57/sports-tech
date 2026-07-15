@@ -99,6 +99,16 @@ class MetricBenchmark(BaseModel):
     sample_size: int  # 比較対象人数
 
 
+class GrowthPredictionResponse(BaseModel):
+    """成長予測(B#20)。"""
+
+    horizon: str
+    projected_total: float
+    potential: float  # 伸びしろ 0-100
+    monthly_trend: float  # 月あたり総合スコア変化
+    comment: str
+
+
 class AthleteScoresResponse(BaseModel):
     """選手のスコア詳細（最新 + 履歴 + アナリティクス）。"""
 
@@ -116,4 +126,5 @@ class AthleteScoresResponse(BaseModel):
     percentile: float | None  # 総合スコアの同ポジション内パーセンタイル(0-100)
     consistency: float | None  # 総合スコアの安定性(0-100, 高いほど安定)
     bmi: float | None
+    prediction: GrowthPredictionResponse | None  # 成長予測(B#20)
     is_reference_score: bool = True

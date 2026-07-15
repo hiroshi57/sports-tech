@@ -17,6 +17,7 @@ from app.core.dependencies import ScoutOrCoach
 from app.schemas.athlete import (
     AthleteScoresResponse,
     AthleteSearchItem,
+    GrowthPredictionResponse,
     MetricBenchmark,
     ScoreSnapshot,
 )
@@ -117,6 +118,28 @@ def get_athlete_scores(
     profile, latest, history = scout_service.get_athlete_scores(db, athlete_id, current_user)
     analytics = scout_service.compute_analytics(db, profile, latest, history)
     bench = analytics.benchmark
+
+    # 成長予測(B#20): 履歴（古い順）とオーナーの生年月日から算出
+    prediction = None
+    if latest is not None:
+        from app.models.user import User
+        from app.services import growth_service
+
+        owner = db.get(User, profile.user_id)
+        totals_oldest_first = [r.total_score for r in reversed(history)]
+        gp = growth_service.predict(
+            totals_oldest_first,
+            latest.total_score,
+            owner.birth_date if owner else None,
+        )
+        prediction = GrowthPredictionResponse(
+            horizon=gp.horizon,
+            projected_total=gp.projected_total,
+            potential=gp.potential,
+            monthly_trend=gp.monthly_trend,
+            comment=gp.comment,
+        )
+
     return AthleteScoresResponse(
         id=profile.id,
         name=profile.name,
@@ -140,4 +163,5 @@ def get_athlete_scores(
         percentile=analytics.percentile,
         consistency=analytics.consistency,
         bmi=analytics.bmi,
+        prediction=prediction,
     )
