@@ -6,6 +6,7 @@ from app.models.base import Base
 from app.models.notification import Notification, NotificationType
 from app.models.review import PracticeReview
 from app.models.saved_search import SavedSearch
+from app.models.score_correction import CorrectionStatus, ScoreCorrection
 from app.models.subscription import BillingType, Subscription, SubscriptionStatus
 from app.models.training import TrainingMenu
 from app.models.user import User, UserRole
@@ -32,4 +33,6 @@ __all__ = [
     "Subscription",
     "SubscriptionStatus",
     "BillingType",
+    "ScoreCorrection",
+    "CorrectionStatus",
 ]

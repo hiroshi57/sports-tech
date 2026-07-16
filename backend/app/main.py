@@ -9,6 +9,7 @@ from app.routers import (
     billing,
     health,
     notifications,
+    quality,
     reviews,
     saved_searches,
     scouts,
@@ -48,6 +49,7 @@ app.include_router(training.router, prefix="/api/training", tags=["training"])
 app.include_router(reviews.router, prefix="/api/reviews", tags=["reviews"])
 app.include_router(account.router, prefix="/api/account", tags=["account"])
 app.include_router(billing.router, prefix="/api/billing", tags=["billing"])
+app.include_router(quality.router, prefix="/api/quality", tags=["quality"])
 
 
 @app.get("/")
