@@ -34,3 +34,18 @@ celery_app.conf.update(
     task_always_eager=settings.CELERY_TASK_ALWAYS_EAGER,
     task_eager_propagates=False,
 )
+
+# 定期バッチ(G#46 安定化 / D#35 保存期間)
+# 起動方法: celery -A app.worker.celery_app beat --loglevel=info
+celery_app.conf.beat_schedule = {
+    # 滞留動画の回収（broker断・ワーカークラッシュからの自動復旧）
+    "rescue-stuck-videos": {
+        "task": "app.worker.tasks.rescue_stuck_videos",
+        "schedule": 600.0,  # 10分ごと
+    },
+    # 動画保存期間の予告・満了削除（D#35）
+    "video-retention": {
+        "task": "app.worker.tasks.run_retention",
+        "schedule": 86400.0,  # 日次
+    },
+}

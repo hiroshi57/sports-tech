@@ -154,6 +154,62 @@ def dispatch_analysis(video_id: uuid.UUID) -> str | None:
         return None
 
 
+STUCK_THRESHOLD_MIN = 30  # この分数を超えて PENDING/PROCESSING のままなら滞留とみなす
+RESCUE_BATCH_LIMIT = 50  # 1回の回収バッチで再投入する上限
+
+
+@celery_app.task(name="app.worker.tasks.rescue_stuck_videos")
+def rescue_stuck_videos() -> dict:
+    """
+    滞留動画の回収バッチ(G#46, DLQ相当)。
+
+    broker 断・ワーカークラッシュ等で PENDING / PROCESSING のまま
+    取り残された動画を検出し、分析タスクを再投入する。
+
+    Celery beat 例:
+        celery_app.conf.beat_schedule = {
+            "rescue-stuck-videos": {
+                "task": "app.worker.tasks.rescue_stuck_videos",
+                "schedule": 600.0,  # 10分ごと
+            },
+        }
+    """
+    from datetime import UTC, datetime, timedelta
+
+    from sqlalchemy import select
+
+    db = SessionLocal()
+    try:
+        cutoff = datetime.now(UTC) - timedelta(minutes=STUCK_THRESHOLD_MIN)
+        rows = (
+            db.execute(
+                select(Video)
+                .where(Video.status.in_([VideoStatus.PENDING, VideoStatus.PROCESSING]))
+                .order_by(Video.updated_at.asc())
+                .limit(RESCUE_BATCH_LIMIT)
+            )
+            .scalars()
+            .all()
+        )
+        requeued: list[str] = []
+        for video in rows:
+            updated = video.updated_at
+            if updated is not None and updated.tzinfo is None:
+                updated = updated.replace(tzinfo=UTC)
+            if updated is not None and updated > cutoff:
+                continue  # まだ処理中の可能性が高い
+            task_id = dispatch_analysis(video.id)
+            if task_id is not None:
+                video.celery_task_id = task_id
+                requeued.append(str(video.id))
+        db.commit()
+        if requeued:
+            logger.warning("rescue_stuck_videos: requeued %d videos: %s", len(requeued), requeued)
+        return {"requeued": len(requeued), "video_ids": requeued}
+    finally:
+        db.close()
+
+
 @celery_app.task(name="app.worker.tasks.run_retention")
 def run_retention() -> dict:
     """

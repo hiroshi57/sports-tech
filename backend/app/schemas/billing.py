@@ -56,3 +56,25 @@ class InvoiceRequest(BaseModel):
     company_name: str = Field(..., min_length=1, max_length=200)
     contact_email: str = Field(..., max_length=255)
     note: str | None = Field(None, max_length=1000)
+
+
+class BulkQuoteRequest(BaseModel):
+    """一括契約(E#40)の見積リクエスト。"""
+
+    tier: str = Field(..., description="starter / pro")
+    seats: int = Field(..., ge=1, le=10000, description="契約席数（アカウント数）")
+    via_agency: bool = Field(False, description="代理店経由か")
+
+
+class BulkQuoteResponse(BaseModel):
+    """一括契約の見積結果。"""
+
+    tier: str
+    seats: int
+    list_price_per_seat_jpy: int
+    discount_rate: float
+    unit_price_jpy: int
+    monthly_total_jpy: int
+    annual_total_jpy: int
+    agency_margin_jpy: int | None
+    notes: list[str]

@@ -15,13 +15,15 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import CurrentUser
 from app.schemas.billing import (
+    BulkQuoteRequest,
+    BulkQuoteResponse,
     CheckoutRequest,
     CheckoutResponse,
     InvoiceRequest,
     PlanResponse,
     SubscriptionResponse,
 )
-from app.services import billing_plans, billing_service
+from app.services import billing_plans, billing_service, bulk_contract
 from app.services.billing_plans import Plan, PlanTier
 
 router = APIRouter()
@@ -46,6 +48,20 @@ def _plan_to_response(p: Plan) -> PlanResponse:
 def list_plans() -> list[PlanResponse]:
     """料金表（認証不要・公開）。"""
     return [_plan_to_response(p) for p in billing_plans.all_plans()]
+
+
+@router.post(
+    "/bulk-quote",
+    response_model=BulkQuoteResponse,
+    summary="一括契約(E#40)の見積を取得する",
+)
+def bulk_quote(req: BulkQuoteRequest) -> BulkQuoteResponse:
+    """代理店/クラブ一括契約のボリュームディスカウント見積（認証不要・公開）。"""
+    try:
+        q = bulk_contract.quote(req.tier, req.seats, via_agency=req.via_agency)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+    return BulkQuoteResponse(**vars(q))
 
 
 @router.get("/subscription", response_model=SubscriptionResponse, summary="現在の契約状況")
