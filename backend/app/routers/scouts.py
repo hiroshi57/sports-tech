@@ -21,6 +21,7 @@ from app.schemas.athlete import (
     MetricBenchmark,
     ScoreSnapshot,
 )
+from app.schemas.crm import MarketValueResponse, SimilarAthleteResponse
 from app.schemas.deep_analysis import (
     AbilityItemResponse,
     DecisionResponse,
@@ -32,7 +33,7 @@ from app.schemas.deep_analysis import (
     SetPieceResponse,
     SituationalResponse,
 )
-from app.services import deep_analysis, scout_service
+from app.services import crm_service, deep_analysis, scout_service, talent_insights
 from app.services.scout_service import AthleteSearchResult
 
 router = APIRouter()
@@ -130,6 +131,9 @@ def get_athlete_scores(
     analytics = scout_service.compute_analytics(db, profile, latest, history)
     bench = analytics.benchmark
 
+    # 閲覧ログ(C#30): 選手側に「誰に見られたか」を開示するため記録する
+    crm_service.record_view(db, current_user, profile.id)
+
     # 成長予測(B#20): 履歴（古い順）とオーナーの生年月日から算出
     prediction = None
     if latest is not None:
@@ -222,4 +226,59 @@ def get_athlete_deep_analysis(
             "Phase 1: 4基礎スコア・履歴・体格からの導出値。"
             "実測トラッキング導入時に実測値へ置換予定。"
         ),
+    )
+
+
+@router.get(
+    "/athletes/{athlete_id}/similar",
+    response_model=list[SimilarAthleteResponse],
+    summary="類似選手レコメンド(C#28)を取得する",
+)
+def get_similar_athletes(
+    athlete_id: uuid.UUID,
+    current_user: ScoutOrCoach,
+    db: Annotated[Session, Depends(get_db)],
+    limit: int = Query(5, ge=1, le=20),
+    same_position: bool = Query(False, description="同ポジションに限定する"),
+) -> list[SimilarAthleteResponse]:
+    """スコアベクトルが近い公開選手を類似度順に返す（参考値）。"""
+    profile, latest, _history = scout_service.get_athlete_scores(db, athlete_id, current_user)
+    if latest is None:
+        raise HTTPException(status_code=404, detail="分析結果がまだありません")
+    similar = talent_insights.find_similar(
+        db, profile, latest, limit=limit, same_position_only=same_position
+    )
+    return [
+        SimilarAthleteResponse(
+            athlete_id=s.athlete_id,
+            name=s.name,
+            position=s.position,
+            similarity=s.similarity,
+            total_score=s.total_score,
+        )
+        for s in similar
+    ]
+
+
+@router.get(
+    "/athletes/{athlete_id}/market-value",
+    response_model=MarketValueResponse,
+    summary="移籍市場価値の参考レンジ(C#29)を取得する",
+)
+def get_market_value(
+    athlete_id: uuid.UUID,
+    current_user: ScoutOrCoach,
+    db: Annotated[Session, Depends(get_db)],
+) -> MarketValueResponse:
+    """スコア・年齢・ポジションからの参考レンジ。契約判断の根拠には使用しないこと。"""
+    profile, latest, _history = scout_service.get_athlete_scores(db, athlete_id, current_user)
+    if latest is None:
+        raise HTTPException(status_code=404, detail="分析結果がまだありません")
+    mv = talent_insights.estimate_for_profile(db, profile, latest)
+    return MarketValueResponse(
+        low_jpy=mv.low_jpy,
+        high_jpy=mv.high_jpy,
+        age_factor=mv.age_factor,
+        position_factor=mv.position_factor,
+        comment=mv.comment,
     )

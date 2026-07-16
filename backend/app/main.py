@@ -7,6 +7,7 @@ from app.routers import (
     activities,
     auth,
     billing,
+    crm,
     health,
     notifications,
     quality,
@@ -50,6 +51,8 @@ app.include_router(reviews.router, prefix="/api/reviews", tags=["reviews"])
 app.include_router(account.router, prefix="/api/account", tags=["account"])
 app.include_router(billing.router, prefix="/api/billing", tags=["billing"])
 app.include_router(quality.router, prefix="/api/quality", tags=["quality"])
+app.include_router(crm.router, prefix="/api/scouts", tags=["crm"])
+app.include_router(crm.athlete_router, prefix="/api/athletes", tags=["crm"])
 
 
 @app.get("/")

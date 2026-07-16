@@ -3,6 +3,13 @@
 from app.models.activity import ActivityLog, ActivityType, SelfCareRecord
 from app.models.athlete import AthleteProfile
 from app.models.base import Base
+from app.models.crm import (
+    AthleteNote,
+    ContactLog,
+    ContactStage,
+    ProfileViewLog,
+    VideoClip,
+)
 from app.models.notification import Notification, NotificationType
 from app.models.review import PracticeReview
 from app.models.saved_search import SavedSearch
@@ -35,4 +42,9 @@ __all__ = [
     "BillingType",
     "ScoreCorrection",
     "CorrectionStatus",
+    "ContactLog",
+    "ContactStage",
+    "AthleteNote",
+    "VideoClip",
+    "ProfileViewLog",
 ]
