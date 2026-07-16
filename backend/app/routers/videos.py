@@ -13,7 +13,7 @@ DELETE /api/videos/{id}            — 動画削除
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -26,7 +26,8 @@ from app.schemas.video import (
     VideoUploadInitRequest,
     VideoUploadResponse,
 )
-from app.services import video_service
+from app.services import billing_service, video_service
+from app.services.billing_service import QuotaExceededError
 
 router = APIRouter()
 
@@ -75,13 +76,28 @@ def complete_upload(
 
     - 動画の長さ（秒）を記録する
     - AI 分析キューへの投入準備をする（Phase 2 で実装）
+
+    フリーミアムのクォータ(E#38): 当月の分析枠を超過している場合は 402 を返す。
+    完了＝分析1本の消費として当期利用量をカウントする。
     """
+    # クォータ判定（無料枠超過は 402 Payment Required でアップグレードへ誘導）
+    try:
+        billing_service.check_can_analyze(db, current_user)
+    except QuotaExceededError as e:
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail=e.message,
+        )
+
     video = video_service.complete_upload(db, video_id, current_user)
     # duration_sec を更新
     if req.duration_sec is not None:
         video.duration_sec = req.duration_sec
         db.commit()
         db.refresh(video)
+
+    # 分析1本を消費として記録
+    billing_service.record_analysis(db, current_user)
     return VideoResponse.model_validate(video)
 
 
