@@ -9,7 +9,7 @@ GET /api/scouts/athletes/{id}    — 公開選手の詳細
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -21,7 +21,18 @@ from app.schemas.athlete import (
     MetricBenchmark,
     ScoreSnapshot,
 )
-from app.services import scout_service
+from app.schemas.deep_analysis import (
+    AbilityItemResponse,
+    DecisionResponse,
+    DeepAnalysisResponse,
+    DuelResponse,
+    FatigueResponse,
+    FootednessResponse,
+    HeatmapResponse,
+    SetPieceResponse,
+    SituationalResponse,
+)
+from app.services import deep_analysis, scout_service
 from app.services.scout_service import AthleteSearchResult
 
 router = APIRouter()
@@ -164,4 +175,51 @@ def get_athlete_scores(
         consistency=analytics.consistency,
         bmi=analytics.bmi,
         prediction=prediction,
+    )
+
+
+@router.get(
+    "/athletes/{athlete_id}/deep-analysis",
+    response_model=DeepAnalysisResponse,
+    summary="公開選手の深掘り分析(B#11-17,19)を取得する",
+)
+def get_athlete_deep_analysis(
+    athlete_id: uuid.UUID,
+    current_user: ScoutOrCoach,
+    db: Annotated[Session, Depends(get_db)],
+) -> DeepAnalysisResponse:
+    """
+    14項目能力・対人・利き足・局面別・ヒートマップ・判断・セットプレー・
+    疲労カーブを返す。Phase 1 は4基礎スコア＋履歴からの導出値。
+
+    スコアは参考値（is_reference_score: true）。
+    """
+    profile, latest, history = scout_service.get_athlete_scores(db, athlete_id, current_user)
+    if latest is None:
+        raise HTTPException(status_code=404, detail="分析結果がまだありません")
+    analytics = scout_service.compute_analytics(db, profile, latest, history)
+
+    da = deep_analysis.analyze(
+        sprint_score=latest.sprint_score,
+        ball_control_score=latest.ball_control_score,
+        positioning_score=latest.positioning_score,
+        body_usage_score=latest.body_usage_score,
+        position=profile.position,
+        height_cm=profile.height_cm,
+        consistency=analytics.consistency,
+    )
+    return DeepAnalysisResponse(
+        athlete_id=profile.id,
+        abilities=[AbilityItemResponse(**vars(a)) for a in da.abilities],
+        duel=DuelResponse(**vars(da.duel)),
+        footedness=FootednessResponse(**vars(da.footedness)),
+        situational=SituationalResponse(**vars(da.situational)),
+        heatmap=HeatmapResponse(**vars(da.heatmap)),
+        decision=DecisionResponse(**vars(da.decision)),
+        set_piece=SetPieceResponse(**vars(da.set_piece)),
+        fatigue=FatigueResponse(**vars(da.fatigue)),
+        method_note=(
+            "Phase 1: 4基礎スコア・履歴・体格からの導出値。"
+            "実測トラッキング導入時に実測値へ置換予定。"
+        ),
     )
