@@ -41,10 +41,14 @@ router = APIRouter()
 athlete_router = APIRouter()
 
 
-def _contact_to_response(log) -> ContactLogResponse:
+def _contact_to_response(db: Session, log) -> ContactLogResponse:
+    enriched = crm_service.enrich_contact(db, log)
     return ContactLogResponse(
         id=log.id,
         athlete_profile_id=log.athlete_profile_id,
+        athlete_name=enriched.athlete_name,
+        athlete_position=enriched.athlete_position,
+        athlete_total_score=enriched.athlete_total_score,
         stage=log.stage.value,
         note=log.note,
         contacted_at=log.contacted_at,
@@ -70,7 +74,7 @@ def create_contact(
     log = crm_service.create_contact(
         db, current_user, req.athlete_profile_id, req.stage, req.note, req.contacted_at
     )
-    return _contact_to_response(log)
+    return _contact_to_response(db, log)
 
 
 @router.get("/contacts", response_model=list[ContactLogResponse], summary="接触ログ一覧")
@@ -79,7 +83,8 @@ def list_contacts(
     db: Annotated[Session, Depends(get_db)],
     stage: str | None = Query(None),
 ) -> list[ContactLogResponse]:
-    return [_contact_to_response(c) for c in crm_service.list_contacts(db, current_user, stage)]
+    logs = crm_service.list_contacts(db, current_user, stage)
+    return [_contact_to_response(db, c) for c in logs]
 
 
 @router.get(
@@ -113,7 +118,7 @@ def update_contact(
         note=req.note,
         contacted_at=req.contacted_at,
     )
-    return _contact_to_response(log)
+    return _contact_to_response(db, log)
 
 
 @router.delete(

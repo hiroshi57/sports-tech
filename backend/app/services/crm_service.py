@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, status
@@ -12,9 +13,41 @@ from sqlalchemy.orm import Session
 from app.models.athlete import AthleteProfile
 from app.models.crm import AthleteNote, ContactLog, ContactStage, ProfileViewLog, VideoClip
 from app.models.user import User
-from app.models.video import Video
+from app.models.video import AnalysisResult, Video
 
 # ── C#25: 接触ログ ────────────────────────────────────────────────
+
+
+@dataclass(frozen=True)
+class ContactWithAthlete:
+    """接触ログ＋パイプライン表示用の選手情報。"""
+
+    contact: ContactLog
+    athlete_name: str | None
+    athlete_position: str | None
+    athlete_total_score: float | None
+
+
+def _latest_total(db: Session, athlete_profile_id: uuid.UUID) -> float | None:
+    """選手の最新分析の総合スコア（無ければ None）。"""
+    return db.execute(
+        select(AnalysisResult.total_score)
+        .join(Video, Video.id == AnalysisResult.video_id)
+        .where(Video.athlete_id == athlete_profile_id)
+        .order_by(AnalysisResult.created_at.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+
+
+def enrich_contact(db: Session, log: ContactLog) -> ContactWithAthlete:
+    """接触ログに選手名・ポジション・最新スコアを付与する。"""
+    profile = db.get(AthleteProfile, log.athlete_profile_id)
+    return ContactWithAthlete(
+        contact=log,
+        athlete_name=profile.name if profile else None,
+        athlete_position=profile.position if profile else None,
+        athlete_total_score=_latest_total(db, log.athlete_profile_id) if profile else None,
+    )
 
 
 def _parse_stage(stage: str) -> ContactStage:

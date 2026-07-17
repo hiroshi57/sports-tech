@@ -165,6 +165,21 @@ class TestContacts:
         # 削除
         assert client.delete(f"/api/scouts/contacts/{cid}", headers=_auth(scout)).status_code == 204
 
+    def test_contact_includes_athlete_info(self, client, sf) -> None:
+        scout = _scout(sf)
+        _, pid, _, _ = _athlete(sf, total=82, position="MF")
+        created = client.post(
+            "/api/scouts/contacts",
+            json={"athlete_profile_id": str(pid)},
+            headers=_auth(scout),
+        )
+        assert created.status_code == 201
+        body = created.json()
+        # パイプライン表示用に選手情報が同梱される
+        assert body["athlete_name"] == "選手"
+        assert body["athlete_position"] == "MF"
+        assert body["athlete_total_score"] == 82
+
     def test_other_scout_cannot_update(self, client, sf) -> None:
         s1, s2 = _scout(sf), _scout(sf)
         _, pid, _, _ = _athlete(sf)

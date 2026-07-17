@@ -28,6 +28,10 @@ class ContactLogResponse(BaseModel):
 
     id: uuid.UUID
     athlete_profile_id: uuid.UUID
+    # パイプライン表示用に選手情報を同梱（カード表示の N+1 を回避）
+    athlete_name: str | None = None
+    athlete_position: str | None = None
+    athlete_total_score: float | None = None
     stage: str
     note: str | None
     contacted_at: datetime | None
