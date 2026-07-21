@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
@@ -251,6 +251,39 @@ def record_view(db: Session, viewer: User, athlete_profile_id: uuid.UUID) -> Non
         )
     )
     db.commit()
+
+
+# ── 保護者同意・プライバシー（D#32/35） ──────────────────────────
+
+VIDEO_RETENTION_DAYS = 90  # D#35 保存期間ポリシーと一致させる
+
+
+def _is_minor(birth: date | None, today: date | None = None) -> bool:
+    if birth is None:
+        return False
+    today = today or date.today()
+    age = today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
+    return age < 18
+
+
+def get_consent(user: User) -> dict:
+    """選手本人の保護者同意・プライバシー状態を返す。"""
+    return {
+        "is_minor": _is_minor(user.birth_date),
+        "consent_granted": bool(user.parental_consent),
+        "guardian_name": None,
+        "updated_at": user.updated_at,
+        "video_retention_days": VIDEO_RETENTION_DAYS,
+    }
+
+
+def set_consent(db: Session, user: User, granted: bool) -> dict:
+    """保護者同意を更新する（取消で公開停止に相当）。"""
+    user.parental_consent = granted
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return get_consent(user)
 
 
 def view_summary(db: Session, athlete_user: User, *, recent_limit: int = 20):

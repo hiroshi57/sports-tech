@@ -29,6 +29,8 @@ from app.schemas.crm import (
     ContactLogCreate,
     ContactLogResponse,
     ContactLogUpdate,
+    GuardianConsentResponse,
+    GuardianConsentUpdate,
     PipelineSummary,
     ProfileViewResponse,
     ProfileViewSummary,
@@ -250,3 +252,25 @@ def get_my_profile_views(
         views_last_30d=last30,
         recent=[ProfileViewResponse(viewer_role=r, viewed_at=t) for r, t in recent],
     )
+
+
+@athlete_router.get(
+    "/me/consent",
+    response_model=GuardianConsentResponse,
+    summary="保護者同意・プライバシー状態を取得する",
+)
+def get_my_consent(current_user: AthleteOnly) -> GuardianConsentResponse:
+    return GuardianConsentResponse(**crm_service.get_consent(current_user))
+
+
+@athlete_router.patch(
+    "/me/consent",
+    response_model=GuardianConsentResponse,
+    summary="保護者同意を更新する（取消で公開停止）",
+)
+def update_my_consent(
+    req: GuardianConsentUpdate,
+    current_user: AthleteOnly,
+    db: Annotated[Session, Depends(get_db)],
+) -> GuardianConsentResponse:
+    return GuardianConsentResponse(**crm_service.set_consent(db, current_user, req.consent_granted))

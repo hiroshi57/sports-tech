@@ -255,6 +255,38 @@ class TestSimilarAndMarketValue:
         assert body["is_reference_score"] is True
 
 
+class TestConsent:
+    def test_get_and_update_consent(self, client, sf) -> None:
+        atoken, _, _, _ = _athlete(sf)
+        res = client.get("/api/athletes/me/consent", headers=_auth(atoken))
+        assert res.status_code == 200
+        body = res.json()
+        assert isinstance(body["is_minor"], bool)
+        assert body["video_retention_days"] == 90
+
+        # 同意を付与 → 取消 で往復できる
+        on = client.patch(
+            "/api/athletes/me/consent",
+            json={"consent_granted": True},
+            headers=_auth(atoken),
+        )
+        assert on.status_code == 200
+        assert on.json()["consent_granted"] is True
+
+        off = client.patch(
+            "/api/athletes/me/consent",
+            json={"consent_granted": False},
+            headers=_auth(atoken),
+        )
+        assert off.status_code == 200
+        assert off.json()["consent_granted"] is False
+
+    def test_scout_cannot_access_consent(self, client, sf) -> None:
+        scout = _scout(sf)
+        res = client.get("/api/athletes/me/consent", headers=_auth(scout))
+        assert res.status_code == 403
+
+
 class TestProfileViews:
     def test_athlete_sees_views(self, client, sf) -> None:
         scout = _scout(sf)

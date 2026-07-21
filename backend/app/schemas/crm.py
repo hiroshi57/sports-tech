@@ -129,3 +129,18 @@ class ProfileViewSummary(BaseModel):
     total_views: int
     views_last_30d: int
     recent: list[ProfileViewResponse]
+
+
+# ── 保護者同意・プライバシー（D#32/35 選手本人向け） ──────────────
+
+
+class GuardianConsentResponse(BaseModel):
+    is_minor: bool
+    consent_granted: bool
+    guardian_name: str | None = None
+    updated_at: datetime | None = None
+    video_retention_days: int
+
+
+class GuardianConsentUpdate(BaseModel):
+    consent_granted: bool
